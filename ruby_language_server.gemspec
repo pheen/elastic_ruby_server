@@ -50,6 +50,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activerecord', '~>6.1'
   spec.add_dependency 'sqlite3'
 
+  spec.add_dependency 'parser'
+  spec.add_dependency 'elasticsearch'
+
   spec.add_development_dependency 'guard'
   spec.add_development_dependency 'guard-minitest'
   spec.add_development_dependency 'guard-rubocop'

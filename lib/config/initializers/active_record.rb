@@ -15,8 +15,8 @@ database.enable_load_extension(0)
 
 if ENV['LOG_LEVEL'] == 'DEBUG'
   begin
-    warn('Turning on active record logging to active_record.log')
-    ActiveRecord::Base.logger = Logger.new(File.open('active_record.log', 'w'))
+    # warn('Turning on active record logging to active_record.log')
+    # ActiveRecord::Base.logger = Logger.new(File.open('active_record.log', 'w'))
   rescue Exception => e
     ActiveRecord::Base.logger = Logger.new($stderr)
     ActiveRecord::Base.logger.error(e)

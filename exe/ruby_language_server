@@ -3,6 +3,16 @@
 
 $LOAD_PATH << File.join(__dir__, '..', 'lib')
 
+# pid = Process.fork
+
+# if pid.nil? then
+#   # In child
+#   exec "elasticsearch -d -p PID"
+# else
+#   # In parent
+#   Process.detach(pid)
+# end
+
 require 'ruby_language_server'
 
 application = RubyLanguageServer::Application.new
