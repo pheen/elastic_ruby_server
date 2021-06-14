@@ -1,9 +1,6 @@
 # docker build -t ruby_language_server .
-#
-# For development:
-# docker run -it -v $PWD:/project -v $PWD:/tmp/src -w /tmp/src ruby_language_server sh -c 'bundle && guard'
 FROM ruby:3.0-alpine
-LABEL maintainer="kurt@CircleW.org"
+LABEL maintainer="syright@gmail.com"
 
 RUN apk add --no-cache openjdk11-jre-headless su-exec
 
@@ -84,20 +81,11 @@ RUN adduser -D default \
 
 RUN gem update bundler
 
-# Needed for byebug and some other gems
 RUN apk update
-RUN apk add curl make g++ sqlite-dev
-
-WORKDIR /usr/local/src
-RUN curl -O -L https://github.com/mateusza/SQLite-Levenshtein/archive/master.zip
-RUN unzip master.zip
-WORKDIR /usr/local/src/SQLite-Levenshtein-master
-RUN ./configure
-RUN make -j 8 install
+RUN apk add curl make g++
 
 WORKDIR /app
 
-# We expect the target project to be mounted here:
 ENV RUBY_LANGUAGE_SERVER_PROJECT_ROOT /project
 # ENV LOG_LEVEL DEBUG
 
@@ -113,6 +101,4 @@ USER default
 
 RUN sudo chown -R default:elasticsearch /usr/share/elasticsearch/
 
-# We must not use bundle exec, here - we are running in the
-# CMD ["ruby", "/app/exe/ruby_language_server"]
 CMD "/app/exe/entry.sh"

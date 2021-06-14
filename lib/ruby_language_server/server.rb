@@ -59,8 +59,7 @@ module RubyLanguageServer
 
       RubyLanguageServer.logger.info(`/app/exe/es_check.sh`)
 
-      @ruby_parser.index_all
-
+      # @ruby_parser.index_all
     end
 
     # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>19, "character"=>16}}
