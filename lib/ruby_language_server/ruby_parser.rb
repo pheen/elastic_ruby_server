@@ -6,6 +6,7 @@ require "elasticsearch"
 require_relative "document"
 require_relative "node_types"
 require_relative "path_finder"
+require_relative "persistence"
 
 module RubyLanguageServer
   class RubyParser
@@ -17,8 +18,8 @@ module RubyLanguageServer
     attr_reader :index_name
 
     def index_all
-      # presistence.delete_index
-      # presistence.create_index
+      persistence.delete_index
+      persistence.create_index
 
       i = 0
       queued_requests = []
@@ -37,7 +38,7 @@ module RubyLanguageServer
           queued_requests << doc
         end
 
-        if queued_requests.count > 20_000
+        if queued_requests.count > 50_000
           RubyLanguageServer.logger.debug("Processing queued requests")
 
           queued_requests_for_thread = queued_requests.dup
@@ -47,6 +48,8 @@ module RubyLanguageServer
             client.bulk(body: queued_requests_for_thread)
           end
         end
+      rescue Exception => error
+        RubyLanguageServer.logger.debug("file path blew up: #{file_path}")
       end
 
       client.bulk(body: queued_requests) if queued_requests.any?
@@ -140,8 +143,12 @@ module RubyLanguageServer
 
     private
 
+    def persistence
+      @persistence ||= Persistence.new(index_name)
+    end
+
     def client
-      @client ||= Persistence.new(index_name).client
+      @client ||= persistence.client
     end
 
     def dir_path
