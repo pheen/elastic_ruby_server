@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 module RubyLanguageServer
   class Document
-    def initialize(ast, path)
+    def initialize(file_path)
+      contents = ::IO.binread(file_path)
+      ast = Parser::Ruby26.parse(contents)
+
       @ast = ast
-      @path = path
+      @path = file_path.sub("/project", "")
+    rescue Parser::SyntaxError => e
+      @ast = nil
     end
 
     def build_all(ast = @ast, scope = [], documents = [], root: true)

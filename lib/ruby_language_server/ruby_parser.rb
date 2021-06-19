@@ -32,11 +32,7 @@ module RubyLanguageServer
         RubyLanguageServer.logger.debug("Starting file ##{i}: #{file_path}") if i == 1
         RubyLanguageServer.logger.debug("Starting file ##{i}: #{file_path}") if i % 100 == 0
 
-        contents = ::IO.binread(file_path)
-        ast = Parser::Ruby26.parse(contents)
-        container_file_path = file_path.sub("/project", "")
-
-        Document.new(ast, container_file_path).build_all.each do |doc|
+        Document.new(file_path).build_all.each do |doc|
           queued_requests << { index: { _index: index_name } }
           queued_requests << doc
         end
@@ -51,8 +47,6 @@ module RubyLanguageServer
             client.bulk(body: queued_requests_for_thread)
           end
         end
-      rescue Parser::SyntaxError => e
-        # no-op
       end
 
       client.bulk(body: queued_requests) if queued_requests.any?
