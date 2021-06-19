@@ -99,7 +99,8 @@ module RubyLanguageServer
               { "match": { "name": usage_doc["_source"]["name"] }}
             ],
             "should": [
-              { "term": { "file_path.tree": file_path } }
+              { "term": { "file_path.tree": file_path } },
+              { "terms": { "scope": usage_doc["_source"]["scope"] } }
             ]
           }
         }
@@ -126,11 +127,11 @@ module RubyLanguageServer
           range: {
             start: {
               line: assignment_doc["_source"]["line"] - 1,
-              character: assignment_doc["_source"]["columns"]["gte"]
+              character: assignment_doc["_source"]["columns"]["gte"] - 1
             },
             end: {
               line: assignment_doc["_source"]["line"] - 1,
-              character: assignment_doc["_source"]["columns"]["lte"]
+              character: assignment_doc["_source"]["columns"]["lte"] - 1
             }
           }
         }

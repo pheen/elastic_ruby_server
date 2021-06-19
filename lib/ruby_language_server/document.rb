@@ -49,8 +49,8 @@ module RubyLanguageServer
         type: node.node_type,
         line: node.start_line,
         columns: {
-          gte: node.start_column,
-          lte: node.end_column
+          gte: node.start_column + 1,
+          lte: node.end_column + 1
         }
       }
     end

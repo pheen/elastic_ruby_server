@@ -7,7 +7,7 @@ module RubyLanguageServer
       node_class_name = "#{ast.type.capitalize}Node"
       NodeTypes.const_get(node_class_name).new(ast)
     rescue NameError
-      # warn "Missing node: #{node_class_name}"
+      warn "Missing node: #{node_class_name}"
       NodeTypes::NodeMissing.new(ast)
     end
     module_function :node_class
@@ -57,7 +57,9 @@ module RubyLanguageServer
         [node_name]
       end
 
-      def end_column
+      private
+
+      def find_end_column
         offset = node.to_s.match(/#{node_type} :(.*)\n/)[1].length
         start_column + offset
       end
@@ -153,9 +155,25 @@ module RubyLanguageServer
       end
     end
 
-    class LvasgnNode < Assignment; end
-    class IvasgnNode < Assignment; end
-    class CvasgnNode < Assignment; end
+    class LvasgnNode < Assignment
+      def end_column
+        find_end_column
+      end
+    end
+
+    class IvasgnNode < Assignment
+      def end_column
+        find_end_column
+      end
+    end
+
+    class CvasgnNode < Assignment
+      def end_column
+        find_end_column
+      end
+    end
+
+    class ArgNode < Assignment; end
 
     class ConstNode < Usage
       def node_name
@@ -174,5 +192,6 @@ module RubyLanguageServer
 
     class IgnoreDefinition < NodeMissing; end
     class BeginNode < IgnoreDefinition; end
+    class ArgsNode < IgnoreDefinition; end
   end
 end

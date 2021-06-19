@@ -28,6 +28,7 @@ RSpec::Matchers.define :match_doc do |expected|
   end
 
   failure_message do |target|
+    return "no match found for #{expected} " unless target
     pretty_hash_diff(target["_source"], expected)
   end
 
@@ -38,7 +39,7 @@ RSpec::Matchers.define :match_doc do |expected|
 end
 
 def pretty_hash_diff(actual, expected)
-  known_keys = ["category", "file_path", "name"]
+  known_keys = ["category", "line"]
   diff = Hashdiff.diff(actual, expected, indifferent: true)
 
   diff.map! do |arr|

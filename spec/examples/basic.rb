@@ -1,5 +1,7 @@
 class Basic
-  def first_method
+  def first_method(argument)
+    argument
+
     local_var     = "value"
     @instance_var = "value"
     @@class_var   = "value"
@@ -7,5 +9,9 @@ class Basic
     local_var
     @instance_var
     @@class_var
+  end
+
+  def second_method
+    first_method
   end
 end
