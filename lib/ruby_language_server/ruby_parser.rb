@@ -11,8 +11,6 @@ module RubyLanguageServer
           next Find.prune if git_ignored_path?(file_path)
           next unless File.fnmatch?("*.rb", file_path, File::FNM_DOTMATCH)
 
-          # RubyLanguageServer.logger.debug("yielding: #{file_path}")
-
           yield(file_path)
         end
       end
@@ -91,6 +89,11 @@ module RubyLanguageServer
 
       def scope_names
         [node_name]
+      end
+
+      def end_column
+        offset = node.to_s.match(/#{node_type} :(.*)\n/)[1].length
+        start_column + offset
       end
     end
 
@@ -256,6 +259,7 @@ module RubyLanguageServer
           begin
             NodeTypes.const_get(node_class_name)
           rescue NameError
+            # warn "Missing node: #{node_class_name}"
             NodeTypes::NodeMissing
           end
 
@@ -265,77 +269,16 @@ module RubyLanguageServer
   end
 
   class RubyParser
-    def initialize(host_workspace_path)
+    def initialize(host_workspace_path, index_name:)
       @workspace_path = host_workspace_path
+      @index_name = index_name
     end
 
+    attr_reader :index_name
+
     def index_all
-      if client.indices.exists?(index: :ruby_parser_index)
-        client.indices.delete(index: :ruby_parser_index)
-
-        # client.delete_by_query(
-        #   index: "ruby_parser_index",
-        #   body: {
-        #     query: {
-        #       match: {
-        #         _index: :ruby_parser_index
-        #       }
-        #     }
-        #   }
-        # )
-      end
-
-      client.indices.create(
-        index: :ruby_parser_index,
-        body: {
-          settings: {
-            analysis: {
-              "analyzer": {
-                "custom_path_tree": {
-                  "tokenizer": "custom_hierarchy"
-                },
-                "custom_path_tree_reversed": {
-                  "tokenizer": "custom_hierarchy_reversed"
-                }
-              },
-              "tokenizer": {
-                "custom_hierarchy": {
-                  "type": "path_hierarchy",
-                  "delimiter": "/"
-                },
-                "custom_hierarchy_reversed": {
-                  "type": "path_hierarchy",
-                  "delimiter": "/",
-                  "reverse": "true"
-                }
-              }
-            }
-          },
-          mappings: {
-            properties: {
-              "id": { type: "keyword" },
-              "file_path": {
-                "type": "text",
-                "fields": {
-                  "tree": {
-                    "type": "text",
-                    "analyzer": "custom_path_tree"
-                  },
-                  "tree_reversed": {
-                    "type": "text",
-                    "analyzer": "custom_path_tree_reversed"
-                  }
-                }
-              },
-              "scope": { type: "text" },
-              "name": { type: "text" },
-              "type": { type: "keyword" },
-              "line": { type: "integer" },
-              "columns": { type: "integer_range" }
-            }
-          }
-        }
-      )
+      # presistence.delete_index
+      # presistence.create_index
 
       i = 0
       queued_requests = []
@@ -343,7 +286,9 @@ module RubyLanguageServer
       start_time = Time.now
       RubyLanguageServer.logger.debug("Starting: #{start_time}")
 
-      PathFinder.search(ENV['RUBY_LANGUAGE_SERVER_PROJECT_ROOT']) do |file_path|
+      dir_path = ENV["RUBY_LANGUAGE_SERVER_PROJECT_ROOT"] || @workspace_path
+
+      PathFinder.search(dir_path) do |file_path|
         i += 1
 
         if i == 1
@@ -362,8 +307,8 @@ module RubyLanguageServer
           doc[:file_path] = doc[:file_path].sub("/project", "")
           doc_id = [doc[:file_path], doc[:scope], doc[:name], doc[:type]].join("_")
 
-          # queued_requests << { index: { _id: doc_id, _index: :ruby_parser_index } }
-          queued_requests << { index: { _index: :ruby_parser_index } }
+          # queued_requests << { index: { _id: doc_id, _index: index_name } }
+          queued_requests << { index: { _index: index_name } }
           queued_requests << doc
         end
 
@@ -407,7 +352,7 @@ module RubyLanguageServer
       }
 
       usage_results = client.search(
-        index: :ruby_parser_index,
+        index: index_name,
         body: query
       )
 
@@ -441,7 +386,7 @@ module RubyLanguageServer
       RubyLanguageServer.logger.debug(assignment_query)
 
       assignment_results = client.search(
-        index: :ruby_parser_index,
+        index: index_name,
         body: assignment_query
       )
 
@@ -472,8 +417,7 @@ module RubyLanguageServer
     private
 
     def client
-      # todo: keep alive http
-      @client = ::Elasticsearch::Client.new(log: false, retry_on_failure: 1000)
+      @client ||= Persistence.new(index_name).client
     end
 
     def strip_protocol(uri)

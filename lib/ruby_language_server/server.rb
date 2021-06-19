@@ -32,8 +32,9 @@ module RubyLanguageServer
       }
     }.freeze
 
-    def initialize(mutex)
+    def initialize(mutex, index_name: :ruby_parser_index)
       @mutex = mutex
+      @index_name = index_name
     end
 
     attr_accessor :io
@@ -44,17 +45,12 @@ module RubyLanguageServer
 
       @root_path = params['rootPath']
       @root_uri = params['rootUri']
-
-      @ruby_parser = RubyParser.new(@root_path)
-
-      # @project_manager = ProjectManager.new(@root_path, @root_uri)
-      # @project_manager.scan_all_project_files(@mutex)
+      @ruby_parser = RubyParser.new(@root_path, index_name: @index_name)
 
       Capabilities
     end
 
     def on_initialized(_hash)
-      RubyLanguageServer.logger.info("on_initialized _hash: #{_hash}")
       RubyLanguageServer.logger.info("RubyLanguageServer::VERSION #{RubyLanguageServer::VERSION}")
 
       RubyLanguageServer.logger.info(`/app/exe/es_check.sh`)
