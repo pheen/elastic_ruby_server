@@ -128,24 +128,50 @@ module RubyLanguageServer
       end
     end
 
+    describe "usage lookup" do
+      let(:file_path) { "#{RootPath}/lookup_usages.rb" }
+
+      it "finds multiple usages per line" do
+        expect(usage_doc(line: 3, col: 10)).to match_doc(
+          name: "sample_method1",
+          type: "send",
+          scope: ["LookupUsages", "multiple_usages_per_line"],
+          columns: { gte: 5, lte: 19 }
+        )
+
+        expect(usage_doc(line: 3, col: 22)).to match_doc(
+          name: "arguments",
+          type: "lvar",
+          scope: ["LookupUsages", "multiple_usages_per_line"],
+          columns: { gte: 20, lte: 29 }
+        )
+
+        expect(usage_doc(line: 3, col: 33)).to match_doc(
+          name: "sample_method2",
+          type: "send",
+          scope: ["LookupUsages", "multiple_usages_per_line"],
+          columns: { gte: 31, lte: 45 }
+        )
+      end
+    end
+
     describe "assignment lookup" do
-      let(:file_path) { "#{RootPath}/scope.rb" }
+      let(:file_path) { "#{RootPath}/lookup_assignments.rb" }
 
       it "prioritizes lvasgn based on scope" do
-        scope = ["Scope", "duplicate_lvar1"]
+        scope1 = ["LookupAssignments", "duplicate_lvar1"]
+        scope2 = ["LookupAssignments", "duplicate_lvar2"]
 
-        expect(asgn_doc("duplicate", scope)).to match_doc(
+        expect(asgn_doc("duplicate", scope1)).to match_doc(
           type: "lvasgn",
-          scope: ["Scope", "duplicate_lvar1"],
+          scope: scope1,
           line: 3,
           columns: { gte: 5, lte: 14 }
         )
 
-        scope = ["Scope", "duplicate_lvar2"]
-
-        expect(asgn_doc("duplicate", scope)).to match_doc(
+        expect(asgn_doc("duplicate", scope2)).to match_doc(
           type: "lvasgn",
-          scope: ["Scope", "duplicate_lvar2"],
+          scope: scope2,
           line: 7,
           columns: { gte: 5, lte: 14 }
         )

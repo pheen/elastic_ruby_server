@@ -188,6 +188,14 @@ module RubyLanguageServer
       def node_name
         node.children[1]
       end
+
+      def start_column
+        node.loc.selector.column
+      end
+
+      def end_column
+        node.loc.selector.last_column
+      end
     end
 
     class IgnoreDefinition < NodeMissing; end
