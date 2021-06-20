@@ -1,14 +1,11 @@
+# frozen_string_literal: true
 module RubyLanguageServer
   RSpec.describe RubyParser do
     RootPath = "#{File.expand_path(File.dirname(__FILE__))}/examples"
     IndexName = :ruby_parser_test_index
 
     before(:all) do
-      persistence.delete_index
-      persistence.create_index
-
-      described_class.new(RootPath, index_name: IndexName).index_all
-
+      persistence.index_all
       client.indices.refresh
     end
 
@@ -241,7 +238,7 @@ module RubyLanguageServer
     end
 
     def persistence
-      @persistence ||= Persistence.new(IndexName)
+      @persistence ||= Persistence.new(RootPath, IndexName)
     end
 
     def client

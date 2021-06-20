@@ -1,10 +1,9 @@
+# frozen_string_literal: true
 require "pry"
 require "hashdiff"
 require "colorize"
 
-Dir["./lib/ruby_language_server/**/*.rb"].each do |file|
-  require file
-end
+require "./lib/ruby_language_server/application.rb"
 
 RSpec.configure do |config|
 end

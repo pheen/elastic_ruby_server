@@ -86,7 +86,7 @@ RUN apk add curl make g++
 
 WORKDIR /app
 
-ENV RUBY_LANGUAGE_SERVER_PROJECT_ROOT /project
+ENV PROJECT_ROOT /project
 # ENV LOG_LEVEL DEBUG
 
 COPY Gemfile* ./

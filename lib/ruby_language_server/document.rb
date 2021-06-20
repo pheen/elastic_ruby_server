@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require "parser/ruby26"
+
 module RubyLanguageServer
   class Document
     def initialize(file_path)
@@ -7,7 +9,8 @@ module RubyLanguageServer
 
       @ast = ast
       @path = file_path.sub("/project", "")
-    rescue Parser::SyntaxError => e
+    rescue Parser::SyntaxError, Errno::ENOENT => e
+      RubyLanguageServer.logger.info("Failed to read file path: #{file_path}")
       @ast = nil
     end
 

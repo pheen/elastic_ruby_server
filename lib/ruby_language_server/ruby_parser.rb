@@ -1,68 +1,17 @@
 # frozen_string_literal: true
-require "parser/ruby26"
-require "find"
-require "elasticsearch"
-
-require_relative "document"
-require_relative "node_types"
-require_relative "path_finder"
-require_relative "persistence"
-
 module RubyLanguageServer
   class RubyParser
-    def initialize(host_workspace_path, index_name:)
-      @workspace_path = host_workspace_path
+    def initialize(workspace_path, index_name)
+      @workspace_path = workspace_path
       @index_name = index_name
     end
 
-    attr_reader :index_name
+    attr_reader :index_name, :workspace_path
 
-    def index_all
-      persistence.delete_index
-      persistence.create_index
-
-      i = 0
-      queued_requests = []
-
-      start_time = Time.now
-      RubyLanguageServer.logger.debug("Starting: #{start_time}")
-
-      PathFinder.search(dir_path) do |file_path|
-        i += 1
-
-        RubyLanguageServer.logger.debug("Starting file ##{i}: #{file_path}") if i == 1
-        RubyLanguageServer.logger.debug("Starting file ##{i}: #{file_path}") if i % 100 == 0
-
-        Document.new(file_path).build_all.each do |doc|
-          queued_requests << { index: { _index: index_name } }
-          queued_requests << doc
-        end
-
-        if queued_requests.count > 50_000
-          RubyLanguageServer.logger.debug("Processing queued requests")
-
-          queued_requests_for_thread = queued_requests.dup
-          queued_requests = []
-
-          Thread.new do
-            client.bulk(body: queued_requests_for_thread)
-          end
-        end
-      rescue Exception => error
-        RubyLanguageServer.logger.debug("file path blew up: #{file_path}")
-      end
-
-      client.bulk(body: queued_requests) if queued_requests.any?
-
-      RubyLanguageServer.logger.debug("Finished in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
-    end
-
-    # uri #=> "file:///Users/joelkorpela/clio/themis/test/testing.rb"
-    def find_possible_definitions(uri, position)
-      host_file_path = strip_protocol(uri)
-      file_path = host_file_path.sub(@workspace_path, "")
+    def find_definitions(host_file_path, position)
+      file_path = host_file_path.sub(workspace_path, "")
       line = position["line"].to_i + 1
-      character = position["character"].to_i
+      character = position["character"].to_i + 1
 
       query = {
         "query": {
@@ -121,9 +70,7 @@ module RubyLanguageServer
       RubyLanguageServer.logger.debug(assignment_results)
 
       assignment_results["hits"]["hits"].map do |assignment_doc|
-        return_uri = "file://#{@workspace_path}#{assignment_doc['_source']['file_path']}"
-
-        RubyLanguageServer.logger.debug("return_uri: #{return_uri}")
+        return_uri = "file://#{workspace_path}#{assignment_doc['_source']['file_path']}"
 
         {
           uri: return_uri,
@@ -143,20 +90,8 @@ module RubyLanguageServer
 
     private
 
-    def persistence
-      @persistence ||= Persistence.new(index_name)
-    end
-
     def client
-      @client ||= persistence.client
-    end
-
-    def dir_path
-      ENV["RUBY_LANGUAGE_SERVER_PROJECT_ROOT"] || @workspace_path
-    end
-
-    def strip_protocol(uri)
-      uri[7..-1]
+      @client ||= Persistence.new(workspace_path, index_name).client
     end
   end
 end

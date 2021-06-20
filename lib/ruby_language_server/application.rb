@@ -1,13 +1,13 @@
 # frozen_string_literal: true
+require "elasticsearch"
 
-require_relative 'logger'
-require_relative 'version'
-require_relative 'io'
+require "find"
+require "json"
+require "logger"
 
-require_relative 'location'
-
-require_relative 'server'
-require_relative 'ruby_parser'
+Dir["#{File.expand_path(File.dirname(__FILE__))}/**/*.rb"].each do |file|
+  require file
+end
 
 module RubyLanguageServer
   class Application

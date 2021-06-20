@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-require "find"
-
 module RubyLanguageServer
   class PathFinder
     class << self
@@ -18,7 +16,7 @@ module RubyLanguageServer
       def git_ignored_path?(path)
         return false if @gitignore_missing
 
-        @git_ignore ||= File.open("#{ENV['RUBY_LANGUAGE_SERVER_PROJECT_ROOT']}/.gitignore").read
+        @git_ignore ||= File.open("#{ENV['PROJECT_ROOT']}/.gitignore").read
         @git_ignore.each_line do |line|
           pattern = line[0..-2]
           return true if File.fnmatch?("./#{pattern}*", path, File::FNM_DOTMATCH)

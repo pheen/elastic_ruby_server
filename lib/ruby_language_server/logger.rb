@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'logger'
-
 module RubyLanguageServer
   level_name = ENV.fetch('LOG_LEVEL', 'error').upcase
   # level_name = 'DEBUG'
