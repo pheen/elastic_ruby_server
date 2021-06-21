@@ -11,7 +11,7 @@ module RubyLanguageServer
         definitionProvider: true,
         referencesProvider: true,
         documentSymbolProvider: false,
-        workspaceSymbolProvider: false,
+        workspaceSymbolProvider: true,
         xworkspaceReferencesProvider: true,
         xdefinitionProvider: true,
         xdependenciesProvider: true,
@@ -48,15 +48,22 @@ module RubyLanguageServer
 
     def on_initialized(_hash)
       RubyLanguageServer.logger.info(`/app/exe/es_check.sh`)
-      # @persistence.index_all
+      @persistence.index_all
     end
 
     def on_textDocument_definition(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>19, "character"=>16}}
+      RubyLanguageServer.logger.debug("on_textDocument_definition")
       file_path = strip_protocol(params["textDocument"]["uri"])
       @ruby_parser.find_definitions(file_path, params["position"])
     end
 
+    def on_workspace_symbol(params) # {"query"=>"abc"}
+      RubyLanguageServer.logger.debug("on_workspace_symbol")
+      @ruby_parser.find_symbols(params["query"])
+    end
+
     def on_textDocument_didSave(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}}
+      RubyLanguageServer.logger.debug("on_textDocument_didSave")
       file_path = strip_protocol(params["textDocument"]["uri"])
       @persistence.reindex(file_path)
     end
@@ -66,8 +73,6 @@ module RubyLanguageServer
       file_paths = params["changes"].map { |change| strip_protocol(change["uri"]) }
       @persistence.reindex(*file_paths)
     end
-
-
 
 
     def on_textDocument_hover(params)

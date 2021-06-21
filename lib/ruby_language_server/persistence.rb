@@ -58,7 +58,14 @@ module RubyLanguageServer
                 }
               },
               "scope": { type: "text" },
-              "name": { type: "text" },
+              "name": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword"
+                  }
+                }
+              },
               "type": { type: "keyword" },
               "line": { type: "integer" },
               "columns": { type: "integer_range" }
@@ -87,6 +94,8 @@ module RubyLanguageServer
     end
 
     def index_all
+      return if client.indices.exists?(index: index_name)
+
       start_time = Time.now
       RubyLanguageServer.logger.debug("Starting: #{start_time}")
 
@@ -154,7 +163,7 @@ module RubyLanguageServer
           queued_requests << doc
         end
 
-        if queued_requests.count > 50_000
+        if queued_requests.count > 25_000
           RubyLanguageServer.logger.debug("Processing queued requests")
 
           queued_requests_for_thread = queued_requests.dup
