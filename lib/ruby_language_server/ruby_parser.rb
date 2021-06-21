@@ -171,6 +171,7 @@ module RubyLanguageServer
               { "terms": { "type": SymbolTypesForLookup } }
             ],
             "should": [
+              { "terms": { "type": ["module", "class"] } },
               { "match": { "name": "#{query}" } },
               { "wildcard": { "name.keyword": "*#{query}*" } },
               { "wildcard": { "file_path.tree": "*#{query}*" } },
