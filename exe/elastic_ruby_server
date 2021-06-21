@@ -1,0 +1,7 @@
+#!/usr/local/bin/ruby
+# frozen_string_literal: true
+
+require_relative "../lib/elastic_ruby_server"
+
+application = ElasticRubyServer::Application.new
+application.start

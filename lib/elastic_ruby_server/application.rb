@@ -9,12 +9,12 @@ Dir["#{File.expand_path(File.dirname(__FILE__))}/**/*.rb"].each do |file|
   require file
 end
 
-module RubyLanguageServer
+module ElasticRubyServer
   class Application
     def start
       update_mutex = Monitor.new
-      server = RubyLanguageServer::Server.new(update_mutex)
-      RubyLanguageServer::IO.new(server, update_mutex)
+      server = ElasticRubyServer::Server.new(update_mutex)
+      ElasticRubyServer::IO.new(server, update_mutex)
     end
   end
 end

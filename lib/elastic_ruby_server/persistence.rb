@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-module RubyLanguageServer
+module ElasticRubyServer
   class Persistence
     def initialize(workspace_path, index_name)
       @workspace_path = workspace_path
@@ -97,7 +97,7 @@ module RubyLanguageServer
       return if client.indices.exists?(index: index_name)
 
       start_time = Time.now
-      RubyLanguageServer.logger.debug("Starting: #{start_time}")
+      ElasticRubyServer.logger.debug("Starting: #{start_time}")
 
       delete_index
       create_index
@@ -109,8 +109,8 @@ module RubyLanguageServer
       PathFinder.search(dir_path) do |file_path|
         i += 1
 
-        RubyLanguageServer.logger.debug("Starting file ##{i}: #{file_path}") if i == 1
-        RubyLanguageServer.logger.debug("Starting file ##{i}: #{file_path} (#{i / (Time.now - start_time).round(2)} docs//s)") if i % 100 == 0
+        ElasticRubyServer.logger.debug("Starting file ##{i}: #{file_path}") if i == 1
+        ElasticRubyServer.logger.debug("Starting file ##{i}: #{file_path} (#{i / (Time.now - start_time).round(2)} docs//s)") if i % 100 == 0
 
         Document.new(file_path).build_all.each do |doc|
           queued_requests << { index: { _index: index_name } }
@@ -118,7 +118,7 @@ module RubyLanguageServer
         end
 
         if queued_requests.count > 50_000
-          RubyLanguageServer.logger.debug("Processing queued requests")
+          ElasticRubyServer.logger.debug("Processing queued requests")
 
           queued_requests_for_thread = queued_requests.dup
           queued_requests = []
@@ -128,17 +128,17 @@ module RubyLanguageServer
           end
         end
       rescue Exception => error
-        RubyLanguageServer.logger.debug("ERROR indexing file: #{file_path}")
-        RubyLanguageServer.logger.debug(error.backtrace)
+        ElasticRubyServer.logger.debug("ERROR indexing file: #{file_path}")
+        ElasticRubyServer.logger.debug(error.backtrace)
       end
 
       client.bulk(body: queued_requests) if queued_requests.any?
 
-      RubyLanguageServer.logger.debug("Finished in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
+      ElasticRubyServer.logger.debug("Finished in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
     end
 
     def reindex(*host_file_paths)
-      RubyLanguageServer.logger.debug("reindex starting on #{host_file_paths.count} files")
+      ElasticRubyServer.logger.debug("reindex starting on #{host_file_paths.count} files")
 
       start_time = Time.now
       queued_requests = []
@@ -164,7 +164,7 @@ module RubyLanguageServer
         end
 
         if queued_requests.count > 25_000
-          RubyLanguageServer.logger.debug("Processing queued requests")
+          ElasticRubyServer.logger.debug("Processing queued requests")
 
           queued_requests_for_thread = queued_requests.dup
           queued_requests = []
@@ -177,7 +177,7 @@ module RubyLanguageServer
 
       client.bulk(body: queued_requests) if queued_requests.any?
 
-      RubyLanguageServer.logger.debug("Finished reindex in: #{Time.now - start_time} seconds")
+      ElasticRubyServer.logger.debug("Finished reindex in: #{Time.now - start_time} seconds")
     end
 
     # private

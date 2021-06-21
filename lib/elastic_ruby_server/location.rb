@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module RubyLanguageServer
+module ElasticRubyServer
   # Hash factories for the language server
   module Location
     class << self

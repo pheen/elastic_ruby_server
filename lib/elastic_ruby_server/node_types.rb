@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-module RubyLanguageServer
+module ElasticRubyServer
   module NodeTypes
     def node_class(ast)
       return NodeTypes::NodeMissing.new(ast) unless ast.respond_to?(:type)

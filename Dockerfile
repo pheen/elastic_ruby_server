@@ -1,4 +1,4 @@
-# docker build -t ruby_language_server .
+# docker build -t elastic_ruby_server .
 FROM ruby:3.0-alpine
 LABEL maintainer="syright@gmail.com"
 
@@ -90,8 +90,8 @@ ENV PROJECT_ROOT /project
 # ENV LOG_LEVEL DEBUG
 
 COPY Gemfile* ./
-COPY ruby_language_server.gemspec .
-COPY lib/ruby_language_server/version.rb lib/ruby_language_server/version.rb
+COPY elastic_ruby_server.gemspec .
+COPY lib/elastic_ruby_server/version.rb lib/elastic_ruby_server/version.rb
 
 RUN bundle install -j 8
 

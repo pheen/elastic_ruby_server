@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-module RubyLanguageServer
+module ElasticRubyServer
   class PathFinder
     class << self
       def search(dir_path)

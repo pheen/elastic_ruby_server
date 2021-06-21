@@ -1,7 +1,0 @@
-#!/usr/local/bin/ruby
-# frozen_string_literal: true
-
-require_relative "../lib/ruby_language_server"
-
-application = RubyLanguageServer::Application.new
-application.start

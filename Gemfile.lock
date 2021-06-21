@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruby_language_server (0.3.15)
+    elastic_ruby_server (0.3.15)
       elasticsearch
       parser
 
@@ -76,7 +76,7 @@ DEPENDENCIES
   pry
   pry-byebug
   rspec
-  ruby_language_server!
+  elastic_ruby_server!
 
 BUNDLED WITH
    2.2.20

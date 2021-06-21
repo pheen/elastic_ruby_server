@@ -3,7 +3,7 @@ require "pry"
 require "hashdiff"
 require "colorize"
 
-require "./lib/ruby_language_server/application.rb"
+require "./lib/elastic_ruby_server/application.rb"
 
 RSpec.configure do |config|
 end
