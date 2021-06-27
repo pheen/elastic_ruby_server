@@ -5,10 +5,7 @@ module ElasticRubyServer
   class Document
     def initialize(file_path)
       contents = ::IO.binread(file_path)
-      ast = Parser::Ruby26.parse(contents)
-
-      @ast = ast
-      @path = file_path.sub("/project", "")
+      @ast = Parser::Ruby26.parse(contents)
     rescue Parser::SyntaxError, Errno::ENOENT => e
       ElasticRubyServer.logger.info("Failed to read file path: #{file_path}")
       @ast = nil
@@ -45,7 +42,6 @@ module ElasticRubyServer
       return if node.class <= NodeTypes::NodeMissing
 
       {
-        file_path: @path,
         scope: scope,
         category: node.category,
         name: node.node_name,

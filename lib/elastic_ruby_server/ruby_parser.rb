@@ -47,15 +47,15 @@ module ElasticRubyServer
 
     SymbolTypesForLookup = ["module", "class", "casgn", "defs", "def"].freeze
 
-    def initialize(workspace_path, index_name)
-      @workspace_path = workspace_path
+    def initialize(host_workspace_path, index_name)
+      @host_workspace_path = host_workspace_path
       @index_name = index_name
     end
 
-    attr_reader :index_name, :workspace_path
+    attr_reader :index_name, :host_workspace_path
 
     def find_definitions(host_file_path, position)
-      file_path = host_file_path.sub(workspace_path, "")
+      file_path = host_file_path.sub(host_workspace_path, "")
       line = position["line"].to_i + 1
       character = position["character"].to_i + 1
 
@@ -116,7 +116,7 @@ module ElasticRubyServer
       ElasticRubyServer.logger.debug(assignment_results)
 
       assignment_results["hits"]["hits"].map do |assignment_doc|
-        return_uri = "file://#{workspace_path}#{assignment_doc['_source']['file_path']}"
+        return_uri = "file://#{host_workspace_path}#{assignment_doc['_source']['file_path']}"
 
         {
           uri: return_uri,
@@ -162,7 +162,7 @@ module ElasticRubyServer
 
       response["hits"]["hits"].map do |doc|
         source = doc["_source"]
-        return_uri = "file://#{workspace_path}#{source['file_path']}"
+        return_uri = "file://#{host_workspace_path}#{source['file_path']}"
 
         {
           name: source["name"],
@@ -188,7 +188,7 @@ module ElasticRubyServer
     private
 
     def client
-      @client ||= Persistence.new(workspace_path, index_name).client
+      @client ||= ElasticsearchClient.connection
     end
   end
 end

@@ -86,7 +86,7 @@ RUN apk add curl make g++
 
 WORKDIR /app
 
-ENV PROJECT_ROOT /project
+ENV PROJECTS_ROOT /projects/
 # ENV LOG_LEVEL DEBUG
 
 COPY Gemfile* ./

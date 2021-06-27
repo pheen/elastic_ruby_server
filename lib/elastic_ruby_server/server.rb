@@ -28,72 +28,89 @@ module ElasticRubyServer
       }
     }.freeze
 
-    def initialize(mutex, index_name: :ruby_parser_index)
-      @mutex = mutex
-      @index_name = index_name
+    def initialize(connection)
+      @conn = connection
+      @events = ProtocolEvents.new
     end
 
-    attr_accessor :io
+    def start
+      loop do
+        json = wait_for_request
+        (id, response) = process_request(json)
+        return_response(id, response) unless id.nil?
+      rescue JSON::ParserError
+        ElasticRubyServer.logger.debug("JSON parse error")
+      rescue SignalException => e
+        ElasticRubyServer.logger.error "We received a signal.  Let's bail: #{e}"
+        exit(true)
+      rescue Exception => e
+        ElasticRubyServer.logger.error "Something when horribly wrong: #{e}"
+        backtrace = e.backtrace * "\n"
+        ElasticRubyServer.logger.error "Backtrace:\n#{backtrace}"
 
-    def on_initialize(params) # params: {"processId"=>54359, "clientInfo"=>{"name"=>"Visual Studio Code", "version"=>"1.56.2"}, "locale"=>"en-us", "rootPath"=>"/Users/joelkorpela/clio/themis/test", "rootUri"=>"file:///Users/joelkorpela/clio/themis/test", "capabilities"=>{"workspace"=>{"applyEdit"=>true, "workspaceEdit"=>{"documentChanges"=>true, "resourceOperations"=>["create", "rename", "delete"], "failureHandling"=>"textOnlyTransactional", "normalizesLineEndings"=>true, "changeAnnotationSupport"=>{"groupsOnLabel"=>true}}, "didChangeConfiguration"=>{"dynamicRegistration"=>true}, "didChangeWatchedFiles"=>{"dynamicRegistration"=>true}, "symbol"=>{"dynamicRegistration"=>true, "symbolKind"=>{"valueSet"=>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]}, "tagSupport"=>{"valueSet"=>[1]}}, "codeLens"=>{"refreshSupport"=>true}, "executeCommand"=>{"dynamicRegistration"=>true}, "configuration"=>true, "workspaceFolders"=>true, "semanticTokens"=>{"refreshSupport"=>true}, "fileOperations"=>{"dynamicRegistration"=>true, "didCreate"=>true, "didRename"=>true, "didDelete"=>true, "willCreate"=>true, "willRename"=>true, "willDelete"=>true}}, "textDocument"=>{"publishDiagnostics"=>{"relatedInformation"=>true, "versionSupport"=>false, "tagSupport"=>{"valueSet"=>[1, 2]}, "codeDescriptionSupport"=>true, "dataSupport"=>true}, "synchronization"=>{"dynamicRegistration"=>true, "willSave"=>true, "willSaveWaitUntil"=>true, "didSave"=>true}, "completion"=>{"dynamicRegistration"=>true, "contextSupport"=>true, "completionItem"=>{"snippetSupport"=>true, "commitCharactersSupport"=>true, "documentationFormat"=>["markdown", "plaintext"], "deprecatedSupport"=>true, "preselectSupport"=>true, "tagSupport"=>{"valueSet"=>[1]}, "insertReplaceSupport"=>true, "resolveSupport"=>{"properties"=>["documentation", "detail", "additionalTextEdits"]}, "insertTextModeSupport"=>{"valueSet"=>[1, 2]}}, "completionItemKind"=>{"valueSet"=>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]}}, "hover"=>{"dynamicRegistration"=>true, "contentFormat"=>["markdown", "plaintext"]}, "signatureHelp"=>{"dynamicRegistration"=>true, "signatureInformation"=>{"documentationFormat"=>["markdown", "plaintext"], "parameterInformation"=>{"labelOffsetSupport"=>true}, "activeParameterSupport"=>true}, "contextSupport"=>true}, "definition"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "references"=>{"dynamicRegistration"=>true}, "documentHighlight"=>{"dynamicRegistration"=>true}, "documentSymbol"=>{"dynamicRegistration"=>true, "symbolKind"=>{"valueSet"=>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]}, "hierarchicalDocumentSymbolSupport"=>true, "tagSupport"=>{"valueSet"=>[1]}, "labelSupport"=>true}, "codeAction"=>{"dynamicRegistration"=>true, "isPreferredSupport"=>true, "disabledSupport"=>true, "dataSupport"=>true, "resolveSupport"=>{"properties"=>["edit"]}, "codeActionLiteralSupport"=>{"codeActionKind"=>{"valueSet"=>["", "quickfix", "refactor", "refactor.extract", "refactor.inline", "refactor.rewrite", "source", "source.organizeImports"]}}, "honorsChangeAnnotations"=>false}, "codeLens"=>{"dynamicRegistration"=>true}, "formatting"=>{"dynamicRegistration"=>true}, "rangeFormatting"=>{"dynamicRegistration"=>true}, "onTypeFormatting"=>{"dynamicRegistration"=>true}, "rename"=>{"dynamicRegistration"=>true, "prepareSupport"=>true, "prepareSupportDefaultBehavior"=>1, "honorsChangeAnnotations"=>true}, "documentLink"=>{"dynamicRegistration"=>true, "tooltipSupport"=>true}, "typeDefinition"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "implementation"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "colorProvider"=>{"dynamicRegistration"=>true}, "foldingRange"=>{"dynamicRegistration"=>true, "rangeLimit"=>5000, "lineFoldingOnly"=>true}, "declaration"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "selectionRange"=>{"dynamicRegistration"=>true}, "callHierarchy"=>{"dynamicRegistration"=>true}, "semanticTokens"=>{"dynamicRegistration"=>true, "tokenTypes"=>["namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword", "modifier", "comment", "string", "number", "regexp", "operator"], "tokenModifiers"=>["declaration", "definition", "readonly", "static", "deprecated", "abstract", "async", "modification", "documentation", "defaultLibrary"], "formats"=>["relative"], "requests"=>{"range"=>true, "full"=>{"delta"=>true}}, "multilineTokenSupport"=>false, "overlappingTokenSupport"=>false}, "linkedEditingRange"=>{"dynamicRegistration"=>true}}, "window"=>{"showMessage"=>{"messageActionItem"=>{"additionalPropertiesSupport"=>true}}, "showDocument"=>{"support"=>true}, "workDoneProgress"=>true}, "general"=>{"regularExpressions"=>{"engine"=>"ECMAScript", "version"=>"ES2020"}, "markdown"=>{"parser"=>"marked", "version"=>"1.1.0"}}}, "trace"=>"off", "workspaceFolders"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/test", "name"=>"test"}]}
-      ElasticRubyServer.logger.info("on_initialize: #{params}")
-
-      @root_path = params['rootPath']
-      @root_uri = params['rootUri']
-      @ruby_parser = RubyParser.new(@root_path, @index_name)
-      @persistence = Persistence.new(@root_path, @index_name)
-
-      Capabilities
+        raise e
+      end
     end
 
-    def on_initialized(_hash)
-      ElasticRubyServer.logger.info(`/app/exe/es_check.sh`)
-      @persistence.index_all
+    def wait_for_request
+      content_length = get_length(@conn.gets)
+      ElasticRubyServer.logger.debug("content_length: #{content_length}")
+
+      return unless content_length
+
+      _clrf = @conn.gets
+      ElasticRubyServer.logger.debug("clrf: #{_clrf}")
+
+      json_string = @conn.readpartial(content_length)
+      # json_string = @conn.gets
+      ElasticRubyServer.logger.debug("json_string: #{json_string}")
+
+      json = JSON.parse(json_string)
+      ElasticRubyServer.logger.debug("json: #{json}")
+
+      ElasticRubyServer.logger.debug('###')
+      ElasticRubyServer.logger.debug('##')
+      ElasticRubyServer.logger.debug('#')
+      ElasticRubyServer.logger.debug('')
+
+      json
     end
 
-    def on_textDocument_definition(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>19, "character"=>16}}
-      ElasticRubyServer.logger.debug("on_textDocument_definition")
-      file_path = strip_protocol(params["textDocument"]["uri"])
-      @ruby_parser.find_definitions(file_path, params["position"])
+    def process_request(json)
+      id = json["id"]
+      method_name = json["method"]
+      params = json["params"]
+      method_name = "on_#{method_name.gsub(/[^\w]/, "_")}"
+
+      if @events.respond_to?(method_name)
+        response = @events.send(method_name, params)
+        [id, response]
+      else
+        ElasticRubyServer.logger.warn "SERVER DOES NOT RESPOND TO #{method_name}"
+        nil
+      end
     end
 
-    def on_workspace_symbol(params) # {"query"=>"abc"}
-      ElasticRubyServer.logger.debug("on_workspace_symbol")
-      @ruby_parser.find_symbols(params["query"])
+    def return_response(id, response)
+      full_response = {
+        jsonrpc: "2.0",
+        id: id,
+        result: response
+      }
+      response_body = JSON.unparse(full_response)
+
+      ElasticRubyServer.logger.info "return_response body: #{response_body}"
+
+      # @conn.puts("Content-Length: #{response_body.length}\r\n\r\n#{response_body}")
+      @conn.write("Content-Length: #{response_body.length}\r\n")
+      @conn.write("\r\n")
+      @conn.write(response_body)
+      # @conn.close
     end
 
-    def on_textDocument_didSave(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}}
-      ElasticRubyServer.logger.debug("on_textDocument_didSave")
-      file_path = strip_protocol(params["textDocument"]["uri"])
-      @persistence.reindex(file_path)
-    end
-
-    def on_workspace_didChangeWatchedFiles(params) # {"changes"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/extensions/rack_session_id.rb", "type"=>3}, {"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/app/services/foundations/lock.rb", "type"=>3}, ...
-      ElasticRubyServer.logger.debug('on_workspace_didChangeWatchedFiles')
-      file_paths = params["changes"].map { |change| strip_protocol(change["uri"]) }
-      @persistence.reindex(*file_paths)
-    end
-
-
-    def on_textDocument_hover(params)
-      ElasticRubyServer.logger.debug('on_textDocument_hover')
-      ElasticRubyServer.logger.debug(params)
-      {}
-    end
-
-    def on_textDocument_documentSymbol(params)
-      ElasticRubyServer.logger.debug('on_textDocument_documentSymbol')
-      ElasticRubyServer.logger.debug(params)
-    end
-
-    def on_shutdown(_params)
-      ElasticRubyServer.logger.info('on_shutdown')
-    end
-
-    private
-
-    def strip_protocol(uri)
-      uri[7..-1]
+    def get_length(string)
+      return if string.nil?
+      string.match(/Content-Length: (\d+)/)[1].to_i
     end
   end
 end

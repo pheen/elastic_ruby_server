@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 module ElasticRubyServer
   class Persistence
-    def initialize(workspace_path, index_name)
-      @workspace_path = workspace_path
+    def initialize(host_workspace_path, container_workspace_path, index_name)
+      @host_workspace_path = host_workspace_path
+      @container_workspace_path = container_workspace_path
       @index_name = index_name
     end
 
@@ -97,28 +98,34 @@ module ElasticRubyServer
       return if client.indices.exists?(index: index_name)
 
       start_time = Time.now
-      ElasticRubyServer.logger.debug("Starting: #{start_time}")
+      ElasticRubyServer.logger.debug("Starting: #{start_time}, index: #{index_name}")
 
       delete_index
       create_index
 
       i = 0
       queued_requests = []
-      dir_path = ENV.fetch("PROJECT_ROOT", @workspace_path)
 
-      PathFinder.search(dir_path) do |file_path|
+      PathFinder.search(@container_workspace_path) do |file_path|
         i += 1
+        searchable_file_path = file_path.sub(@container_workspace_path, "")
 
-        ElasticRubyServer.logger.debug("Starting file ##{i}: #{file_path}") if i == 1
-        ElasticRubyServer.logger.debug("Starting file ##{i}: #{file_path} (#{i / (Time.now - start_time).round(2)} docs//s)") if i % 100 == 0
+        ElasticRubyServer.logger.debug("Starting file (file_path) ##{i}: #{file_path}") if i == 1
+        ElasticRubyServer.logger.debug("Starting file (searchable_file_path) ##{i}: #{searchable_file_path}") if i == 1
+        ElasticRubyServer.logger.debug("Starting file (searchable_file_path) ##{i}: #{searchable_file_path} (#{i / (Time.now - start_time).round(2)} docs\/s)") if i % 100 == 0
 
         Document.new(file_path).build_all.each do |doc|
           queued_requests << { index: { _index: index_name } }
-          queued_requests << doc
+          queued_requests << doc.merge(file_path: searchable_file_path)
         end
 
         if queued_requests.count > 50_000
           ElasticRubyServer.logger.debug("Processing queued requests")
+
+          if rand > 0.5
+            ElasticRubyServer.logger.debug("Sample doc:")
+            ElasticRubyServer.logger.debug(queued_requests.last.to_s)
+          end
 
           queued_requests_for_thread = queued_requests.dup
           queued_requests = []
@@ -144,7 +151,11 @@ module ElasticRubyServer
       queued_requests = []
 
       host_file_paths.each do |host_file_path|
-        file_path = host_file_path.sub(@workspace_path, "")
+        searchable_file_path = host_file_path.sub(@host_workspace_path, "")
+        project_file_path = "#{@container_workspace_path}#{searchable_file_path}"
+
+        ElasticRubyServer.logger.debug("searchable_file_path: #{searchable_file_path}")
+        ElasticRubyServer.logger.debug("project_file_path: #{project_file_path}")
 
         response = client.delete_by_query(
           index: index_name,
@@ -152,15 +163,15 @@ module ElasticRubyServer
           body: {
             "query": {
               "term": {
-                "file_path.tree": file_path
+                "file_path.tree": searchable_file_path
               }
             }
           }
         )
 
-        Document.new("#{ENV["PROJECT_ROOT"]}#{file_path}").build_all.each do |doc|
+        Document.new(project_file_path).build_all.each do |doc|
           queued_requests << { index: { _index: index_name } }
-          queued_requests << doc
+          queued_requests << doc.merge(file_path: searchable_file_path)
         end
 
         if queued_requests.count > 25_000
@@ -180,11 +191,10 @@ module ElasticRubyServer
       ElasticRubyServer.logger.debug("Finished reindex in: #{Time.now - start_time} seconds")
     end
 
-    # private
+    private
 
     def client
-      # todo: keep alive http
-      @client ||= Elasticsearch::Client.new(log: false, retry_on_failure: 3)
+      @client ||= ElasticsearchClient.connection
     end
   end
 end
