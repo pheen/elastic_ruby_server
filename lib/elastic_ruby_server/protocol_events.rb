@@ -10,11 +10,17 @@ module ElasticRubyServer
       index_name = Digest::SHA1.hexdigest(host_workspace_path)
 
       ElasticRubyServer.logger.debug("host_workspace_path: #{host_workspace_path}")
-      ElasticRubyServer.logger.debug("HOST_PROJECTS_ROOT: #{ENV["HOST_PROJECTS_ROOT"]}")
+      ElasticRubyServer.logger.debug("HOST_PROJECT_ROOTS: #{ENV["HOST_PROJECT_ROOTS"]}")
       ElasticRubyServer.logger.debug("PROJECTS_ROOT: #{ENV["PROJECTS_ROOT"]}")
 
-      container_workspace_path = host_workspace_path.sub(ENV["HOST_PROJECTS_ROOT"], ENV["PROJECTS_ROOT"])
+      host_project_root = ENV["HOST_PROJECT_ROOTS"]
+      host_project_root = host_project_root.split(",")
+      host_project_root = host_project_root.map { |path| path.delete("\"") } # wut
+      host_project_root = host_project_root.keep_if { |path| host_workspace_path.match?(path) }
+      host_project_root = host_project_root.sort_by(&:length)
+      host_project_root = host_project_root.last
 
+      container_workspace_path = host_workspace_path.sub(host_project_root, ENV["PROJECTS_ROOT"])
       ElasticRubyServer.logger.debug("container_workspace_path: #{container_workspace_path}")
 
       @ruby_parser = RubyParser.new(host_workspace_path, index_name)
