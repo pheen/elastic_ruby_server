@@ -19,8 +19,12 @@ module ElasticRubyServer
       host_project_root = host_project_root.keep_if { |path| host_workspace_path.match?(path) }
       host_project_root = host_project_root.sort_by(&:length)
       host_project_root = host_project_root.last
+      ElasticRubyServer.logger.debug("host_project_root: #{host_project_root}")
 
-      container_workspace_path = host_workspace_path.sub(host_project_root, ENV["PROJECTS_ROOT"])
+      project_name = host_project_root.match(/\/([^\/]*?)(\/$|$)/)[1]
+      ElasticRubyServer.logger.debug("project_name: #{project_name}")
+
+      container_workspace_path = host_workspace_path.sub(host_project_root, "#{ENV["PROJECTS_ROOT"]}#{project_name}")
       ElasticRubyServer.logger.debug("container_workspace_path: #{container_workspace_path}")
 
       @ruby_parser = RubyParser.new(host_workspace_path, index_name)
