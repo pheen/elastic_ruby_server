@@ -7,7 +7,7 @@ response=$(curl $host)
 
 >&2 echo "Checking Elasticsearch status..."
 
-until [ "$response" = "200" ]; do
+if [ "$response" -ne "200" ]; do
     response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")
     >&2 echo "Elasticsearch is not running. Starting..."
 
