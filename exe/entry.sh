@@ -19,7 +19,7 @@ if [ "$response" -ne "200" ]; then
       echo "Failed to start elasticsearch: $status"
       exit $status
     fi
-done
+fi
 
 >&2 echo "Starting server..."
 
