@@ -6,8 +6,10 @@ host="http://localhost:9200"
 response=$(curl $host)
 
 >&2 echo "Checking Elasticsearch status..."
+>&2 echo "ES Status:"
+>&2 echo "$response"
 
-if [ "$response" -ne "200" ]; do
+if [ "$response" -ne "200" ]; then
     response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")
     >&2 echo "Elasticsearch is not running. Starting..."
 
