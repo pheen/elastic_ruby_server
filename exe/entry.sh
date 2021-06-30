@@ -12,7 +12,7 @@ response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")
 if [[ "$response" -ne "200" ]]; then
     >&2 echo "Elasticsearch is not running. Starting..."
 
-    elasticsearch -d -p PID
+    ES_JAVA_OPTS="-Xms500m -Xmx500m" elasticsearch -d -p PID
 
     status=$?
     if [ $status -ne 0 ]; then
