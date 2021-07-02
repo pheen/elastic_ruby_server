@@ -12,7 +12,12 @@ response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")
 if [[ "$response" -ne "200" ]]; then
     >&2 echo "Elasticsearch is not running. Starting..."
 
-    ES_JAVA_OPTS="-Xms500m -Xmx500m" elasticsearch -d -p PID
+    # export discovery.type=single-node
+    # export bootstrap.memory_lock=true
+    # export ES_JAVA_OPTS="-Xms2g -Xmx2g"
+
+    # MAX_LOCKED_MEMORY=unlimited elasticsearch ES_JAVA_OPTS="-Xms512m -Xmx512m" elasticsearch -d -p PID
+    MAX_LOCKED_MEMORY=unlimited elasticsearch -d -p PID
 
     status=$?
     if [ $status -ne 0 ]; then

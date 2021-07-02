@@ -50,6 +50,8 @@ module ElasticRubyServer
 
         raise e
       end
+
+      ElasticRubyServer.logger.error("INNER LOOP HAS ENDED")
     end
 
     def wait_for_request
@@ -102,9 +104,10 @@ module ElasticRubyServer
       ElasticRubyServer.logger.info "return_response body: #{response_body}"
 
       # @conn.puts("Content-Length: #{response_body.length}\r\n\r\n#{response_body}")
-      @conn.write("Content-Length: #{response_body.length}\r\n")
+      @conn.write("Content-Length: #{response_body.length + 0}\r\n")
       @conn.write("\r\n")
       @conn.write(response_body)
+      @conn.flush
       # @conn.close
     end
 

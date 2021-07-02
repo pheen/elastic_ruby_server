@@ -101,4 +101,8 @@ USER default
 
 RUN sudo chown -R default:elasticsearch /usr/share/elasticsearch/
 
+COPY config/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+COPY config/override.conf /etc/systemd/system/elasticsearch.service.d/override.conf
+COPY config/limits.conf /etc/security/limits.conf
+
 CMD "/app/exe/entry.sh"
