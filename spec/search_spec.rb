@@ -2,7 +2,7 @@
 module ElasticRubyServer
   RSpec.describe Search do
     RootPath = "#{File.expand_path(File.dirname(__FILE__))}/examples"
-    IndexName = :ruby_parser_test_index
+    IndexName = :elastic_ruby_server_test
 
     before(:all) do
       persistence.index_all
@@ -14,7 +14,7 @@ module ElasticRubyServer
     end
 
     describe "basic" do
-      let(:file_path) { "#{RootPath}/basic.rb" }
+      let(:file_path) { "/basic.rb" }
 
       it "class assignment" do
         expect(asgn_doc("Basic")).to match_doc(
@@ -126,7 +126,7 @@ module ElasticRubyServer
     end
 
     describe "usage lookup" do
-      let(:file_path) { "#{RootPath}/lookup_usages.rb" }
+      let(:file_path) { "/lookup_usages.rb" }
 
       it "finds multiple usages per line" do
         expect(usage_doc(line: 3, col: 10)).to match_doc(
@@ -153,7 +153,7 @@ module ElasticRubyServer
     end
 
     describe "assignment lookup" do
-      let(:file_path) { "#{RootPath}/lookup_assignments.rb" }
+      let(:file_path) { "/lookup_assignments.rb" }
 
       it "prioritizes lvasgn based on scope" do
         scope1 = ["LookupAssignments", "duplicate_lvar1"]
@@ -176,7 +176,7 @@ module ElasticRubyServer
     end
 
     describe "arguments" do
-      let(:file_path) { "#{RootPath}/arguments.rb" }
+      let(:file_path) { "/arguments.rb" }
 
       it "multiple arg assignment" do
         expect(asgn_doc("arg1")).to match_doc(
@@ -238,11 +238,11 @@ module ElasticRubyServer
     end
 
     def persistence
-      @persistence ||= Persistence.new(RootPath, IndexName)
+      @persistence ||= Persistence.new(RootPath, RootPath, IndexName)
     end
 
     def client
-      @client ||= persistence.client
+      @client ||= persistence.send(:client) # oooOooOoOooo
     end
   end
 end
