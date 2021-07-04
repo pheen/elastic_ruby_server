@@ -4,7 +4,9 @@ module ElasticRubyServer
     class << self
       # debug, error, fatal, unknown, info, warn
       Logger::Severity.constants.each do |name|
-        define_method(name.to_s.downcase) do |obj|
+        name = name.to_s.downcase
+
+        define_method(name) do |obj|
           logger.send(name, obj)
         end
       end
