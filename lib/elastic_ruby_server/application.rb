@@ -13,36 +13,22 @@ end
 
 module ElasticRubyServer
   class Application
-    Port = 8341
+    Port = 8341 # TODO: make sure this works if someone configures client port
 
     def start
-      ElasticRubyServer.logger.debug "listening... v7"
-
       socket = TCPServer.new(Port)
 
       loop do
-        ElasticRubyServer.logger.debug "waiting for connection..."
         connection = socket.accept
 
-        ElasticRubyServer.logger.debug("Starting new thread...")
         Thread.new do
-          ElasticRubyServer.logger.debug("Thread STARTING!")
-
           server = Server.new(connection)
           server.start
-
-          ElasticRubyServer.logger.debug("Thread ENDING!")
         end
-
-        ElasticRubyServer.logger.debug("After starting new thread")
       end
-
-      ElasticRubyServer.logger.error("LOOP HAS ENDED 1")
     rescue SignalException => e
       ElasticRubyServer.logger.error "We received a signal.  Let's bail: #{e}"
       exit(true)
     end
-
-    ElasticRubyServer.logger.error("LOOP HAS ENDED 2")
   end
 end

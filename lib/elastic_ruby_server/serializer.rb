@@ -2,7 +2,10 @@
 require "parser/ruby26"
 
 module ElasticRubyServer
-  class Document
+  class Serializer
+    # It's a little weird the serializer takes a file_path and outputs
+    # something other than an actual serialized file_path. This would
+    # be nice to improve.
     def initialize(file_path)
       contents = ::IO.binread(file_path)
       @ast = Parser::Ruby26.parse(contents)
@@ -11,36 +14,34 @@ module ElasticRubyServer
       @ast = nil
     end
 
-    def build_all(ast = @ast, scope = [], documents = [], root: true)
+    def serialize_nodes(ast = @ast, scope = [], serialized = [], root: true)
       return [] unless ast.respond_to?(:children)
 
-      node = NodeTypes.node_class(ast)
+      node = NodeTypes.build_node(ast)
 
       if root
-        documents << build_document(scope, node)
+        serialized << serialize(scope, node) unless node.is_a?(NodeTypes::NodeMissing)
         scope += node.scope_names
       end
 
       ast.children.each do |child_ast|
         starting_scope = scope.clone
-        child_node = NodeTypes.node_class(child_ast)
+        child_node = NodeTypes.build_node(child_ast)
 
-        documents << build_document(scope, child_node)
-
+        serialized << serialize(scope, child_node) unless child_node.is_a?(NodeTypes::NodeMissing)
         scope += child_node.scope_names
-        build_all(child_ast, scope, documents, root: false)
+
+        serialize_nodes(child_ast, scope, serialized, root: false)
 
         scope.pop(scope_diff(scope, starting_scope))
       end
 
-      documents.compact
+      serialized
     end
 
     private
 
-    def build_document(scope, node)
-      return if node.class <= NodeTypes::NodeMissing
-
+    def serialize(scope, node)
       {
         scope: scope,
         category: node.category,

@@ -31,6 +31,7 @@ module ElasticRubyServer
     def initialize(connection)
       @conn = connection
       @events = ProtocolEvents.new
+      @events = Events.new
     end
 
     def start

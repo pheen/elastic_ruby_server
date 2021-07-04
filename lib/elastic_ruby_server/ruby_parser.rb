@@ -116,21 +116,10 @@ module ElasticRubyServer
       ElasticRubyServer.logger.debug(assignment_results)
 
       assignment_results["hits"]["hits"].map do |assignment_doc|
-        return_uri = "file://#{host_workspace_path}#{assignment_doc['_source']['file_path']}"
-
-        {
-          uri: return_uri,
-          range: {
-            start: {
-              line: assignment_doc["_source"]["line"] - 1,
-              character: assignment_doc["_source"]["columns"]["gte"] - 1
-            },
-            end: {
-              line: assignment_doc["_source"]["line"] - 1,
-              character: assignment_doc["_source"]["columns"]["lte"] - 1
-            }
-          }
-        }
+        SymbolLocation.build(
+          source: assignment_doc["_source"],
+          workspace_path: host_workspace_path
+        )
       end
     end
 
@@ -162,25 +151,15 @@ module ElasticRubyServer
 
       response["hits"]["hits"].map do |doc|
         source = doc["_source"]
-        return_uri = "file://#{host_workspace_path}#{source['file_path']}"
 
         {
           name: source["name"],
           kind: SymbolTypeMapping[source["type"].to_sym],
           containerName: source["scope"].last,
-          location: {
-            uri: return_uri,
-            range: {
-              start: {
-                line: source["line"] - 1,
-                character: source["columns"]["gte"] - 1
-              },
-              end: {
-                line: source["line"] - 1,
-                character: source["columns"]["lte"] - 1
-              }
-            }
-          }
+          location: SymbolLocation.build(
+            source: source,
+            workspace_path: host_workspace_path
+          )
         }
       end
     end

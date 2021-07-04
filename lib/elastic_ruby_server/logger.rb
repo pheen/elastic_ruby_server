@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module ElasticRubyServer
-  level_name = ENV.fetch('LOG_LEVEL', 'error').upcase
-  # level_name = 'DEBUG'
+  # todo: change how the logger works
+  level_name = ENV.fetch("LOG_LEVEL", "debug").upcase
   level = Logger::Severity.const_get(level_name)
   class << self
     attr_accessor :logger
