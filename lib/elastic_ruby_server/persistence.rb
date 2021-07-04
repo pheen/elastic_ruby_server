@@ -96,14 +96,14 @@ module ElasticRubyServer
       return if client.indices.exists?(index: index_name)
 
       start_time = Time.now
-      ElasticRubyServer.logger.info("Starting to index workspace. Start Time: #{start_time}, Elasticsearch index: #{index_name}")
+      Log.info("Starting to index workspace. Start Time: #{start_time}, Elasticsearch index: #{index_name}")
 
       delete_index
       create_index
 
       queued_requests = []
 
-      PathFinder.new(@container_workspace_path).find_each do |file_path|
+      FilePaths.new(@container_workspace_path).find_each do |file_path|
         searchable_file_path = file_path.sub(@container_workspace_path, "")
 
         Serializer.new(file_path).serialize_nodes.each do |hash|
@@ -120,18 +120,18 @@ module ElasticRubyServer
           end
         end
       rescue Exception => error
-        ElasticRubyServer.logger.error("Something went wrong when indexing file: #{file_path}")
-        ElasticRubyServer.logger.error("Backtrace:")
-        ElasticRubyServer.logger.error(error.backtrace)
+        Log.error("Something went wrong when indexing file: #{file_path}")
+        Log.error("Backtrace:")
+        Log.error(error.backtrace)
       end
 
       client.bulk(body: queued_requests) if queued_requests.any?
 
-      ElasticRubyServer.logger.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
+      Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
     end
 
     def reindex(*host_file_paths)
-      ElasticRubyServer.logger.debug("Reindex starting on #{host_file_paths.count} files.")
+      Log.debug("Reindex starting on #{host_file_paths.count} files.")
 
       start_time = Time.now
       queued_requests = []
@@ -169,7 +169,7 @@ module ElasticRubyServer
 
       client.bulk(body: queued_requests) if queued_requests.any?
 
-      ElasticRubyServer.logger.debug("Finished reindexing in: #{Time.now - start_time} seconds.")
+      Log.debug("Finished reindexing in: #{Time.now - start_time} seconds.")
     end
 
     private

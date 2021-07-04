@@ -30,91 +30,69 @@ module ElasticRubyServer
 
     def initialize(connection)
       @conn = connection
-      @events = ProtocolEvents.new
       @events = Events.new
     end
 
     def start
       loop do
-        json = wait_for_request
-        (id, response) = process_request(json)
-        return_response(id, response) unless id.nil?
+        json = receive_request
+        send_response(json)
       rescue JSON::ParserError
-        ElasticRubyServer.logger.debug("JSON parse error")
-      rescue SignalException => e
-        ElasticRubyServer.logger.error "We received a signal.  Let's bail: #{e}"
-        exit(true)
+        Log.error("JSON parse error: #{json}")
       rescue Exception => e
-        ElasticRubyServer.logger.error "Something when horribly wrong: #{e}"
-        backtrace = e.backtrace * "\n"
-        ElasticRubyServer.logger.error "Backtrace:\n#{backtrace}"
+        Log.error("Something when horribly wrong: #{e}")
+        Log.error("Backtrace:\n#{e.backtrace * "\n"}")
 
-        raise e
+        # raise(e) # not sure about this, seems wrong
+      rescue SignalException => e
+        Log.error("Received kill signal: #{e}")
+        exit(true)
       end
-
-      ElasticRubyServer.logger.error("INNER LOOP HAS ENDED")
     end
 
-    def wait_for_request
-      content_length = get_length(@conn.gets)
-      ElasticRubyServer.logger.debug("content_length: #{content_length}")
+    private
 
+    def receive_request
+      header = @conn.gets
+      parse_request(header)
+    end
+
+    def parse_request(header)
+      content_length = parse_header(header)
       return unless content_length
 
       _clrf = @conn.gets
-      ElasticRubyServer.logger.debug("clrf: #{_clrf}")
+      json = @conn.readpartial(content_length)
 
-      json_string = @conn.readpartial(content_length)
-      # json_string = @conn.gets
-      ElasticRubyServer.logger.debug("json_string: #{json_string}")
-
-      json = JSON.parse(json_string)
-      ElasticRubyServer.logger.debug("json: #{json}")
-
-      ElasticRubyServer.logger.debug('###')
-      ElasticRubyServer.logger.debug('##')
-      ElasticRubyServer.logger.debug('#')
-      ElasticRubyServer.logger.debug('')
-
-      json
+      JSON.parse(json)
     end
 
-    def process_request(json)
+    def send_response(json)
       id = json["id"]
-      method_name = json["method"]
-      params = json["params"]
-      method_name = "on_#{method_name.gsub(/[^\w]/, "_")}"
+      event_name = "on_#{json["method"].gsub("/", "_")}"
 
-      if @events.respond_to?(method_name)
-        response = @events.send(method_name, params)
-        [id, response]
-      else
-        ElasticRubyServer.logger.warn "SERVER DOES NOT RESPOND TO #{method_name}"
-        nil
-      end
+      return unless id && @events.respond_to?(event_name)
+
+      result = @events.send(event_name, json["params"])
+      write_response(json, result)
     end
 
-    def return_response(id, response)
-      full_response = {
+    def write_response(json, result)
+      response = JSON.unparse({
         jsonrpc: "2.0",
-        id: id,
-        result: response
-      }
-      response_body = JSON.unparse(full_response)
+        id: json["id"],
+        result: result
+      })
 
-      ElasticRubyServer.logger.info "return_response body: #{response_body}"
-
-      # @conn.puts("Content-Length: #{response_body.length}\r\n\r\n#{response_body}")
-      @conn.write("Content-Length: #{response_body.length + 0}\r\n")
+      @conn.write("Content-Length: #{response.length}\r\n")
       @conn.write("\r\n")
-      @conn.write(response_body)
+      @conn.write(response)
       @conn.flush
-      # @conn.close
     end
 
-    def get_length(string)
-      return if string.nil?
-      string.match(/Content-Length: (\d+)/)[1].to_i
+    def parse_header(header)
+      return unless header.respond_to?(:match)
+      header.match(/Content-Length: (\d+)/)[1].to_i
     end
   end
 end

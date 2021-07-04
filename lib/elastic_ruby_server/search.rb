@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 module ElasticRubyServer
-  class RubyParser
+  class Search
     # VSCode's symbol kinds (https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#symbolKind)
     SymbolKinds = {
       file: 1,
@@ -56,71 +56,11 @@ module ElasticRubyServer
 
     def find_definitions(host_file_path, position)
       file_path = host_file_path.sub(host_workspace_path, "")
-      line = position["line"].to_i + 1
-      character = position["character"].to_i + 1
+      usage = query_usage(file_path, position)
 
-      query = {
-        "query": {
-          "bool": {
-            "must": [
-              { "match": { "category": "usage" } },
-              { "match": { "line": line }},
-              { "term": { "columns": { "value": character }}},
-              { "term": { "file_path.tree": file_path } }
-            ]
-          }
-        }
-      }
+      return [] unless usage
 
-      usage_results = client.search(
-        index: index_name,
-        body: query
-      )
-
-      usage_doc = usage_results["hits"]["hits"].first
-
-      ElasticRubyServer.logger.debug("query:")
-      ElasticRubyServer.logger.debug(query)
-      ElasticRubyServer.logger.debug("usage_results:")
-      ElasticRubyServer.logger.debug(usage_results)
-
-      unless usage_doc
-        ElasticRubyServer.logger.debug("No usage_doc found :(")
-        return []
-      end
-
-      assignment_query = {
-        "query": {
-          "bool": {
-            "must": [
-              { "match": { "category": "assignment" } },
-              { "match": { "name": usage_doc["_source"]["name"] }}
-            ],
-            "should": [
-              { "term": { "file_path.tree": file_path } },
-              { "terms": { "scope": usage_doc["_source"]["scope"] } }
-            ]
-          }
-        }
-      }
-
-      ElasticRubyServer.logger.debug("assignment_query:")
-      ElasticRubyServer.logger.debug(assignment_query)
-
-      assignment_results = client.search(
-        index: index_name,
-        body: assignment_query
-      )
-
-      ElasticRubyServer.logger.debug("assignment_results:")
-      ElasticRubyServer.logger.debug(assignment_results)
-
-      assignment_results["hits"]["hits"].map do |assignment_doc|
-        SymbolLocation.build(
-          source: assignment_doc["_source"],
-          workspace_path: host_workspace_path
-        )
-      end
+      query_assignment(file_path, usage)
     end
 
     def find_symbols(query)
@@ -154,7 +94,7 @@ module ElasticRubyServer
 
         {
           name: source["name"],
-          kind: SymbolTypeMapping[source["type"].to_sym],
+          kind: lookup_vscode_type(source["type"]),
           containerName: source["scope"].last,
           location: SymbolLocation.build(
             source: source,
@@ -165,6 +105,64 @@ module ElasticRubyServer
     end
 
     private
+
+    def query_usage(file_path, position)
+      line = position["line"].to_i + 1
+      character = position["character"].to_i + 1
+
+      query = {
+        "query": {
+          "bool": {
+            "must": [
+              { "match": { "category": "usage" } },
+              { "match": { "line": line }},
+              { "term": { "columns": { "value": character }}},
+              { "term": { "file_path.tree": file_path } }
+            ]
+          }
+        }
+      }
+
+      results = client.search(
+        index: index_name,
+        body: query
+      )
+
+      results["hits"]["hits"].first
+    end
+
+    def query_assignment(file_path, usage)
+      query = {
+        "query": {
+          "bool": {
+            "must": [
+              { "match": { "category": "assignment" } },
+              { "match": { "name": usage["_source"]["name"] }}
+            ],
+            "should": [
+              { "term": { "file_path.tree": file_path } },
+              { "terms": { "scope": usage["_source"]["scope"] } }
+            ]
+          }
+        }
+      }
+
+      results = client.search(
+        index: index_name,
+        body: query
+      )
+
+      results["hits"]["hits"].map do |doc|
+        SymbolLocation.build(
+          source: doc["_source"],
+          workspace_path: host_workspace_path
+        )
+      end
+    end
+
+    def lookup_vscode_type(type)
+      SymbolTypeMapping[type.to_sym]
+    end
 
     def client
       @client ||= ElasticsearchClient.connection

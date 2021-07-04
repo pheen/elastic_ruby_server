@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module ElasticRubyServer
-  # todo: better class name
-  class PathFinder
+  class FilePaths
     def initialize(dir_path)
       @dir_path = dir_path
     end
@@ -20,8 +19,7 @@ module ElasticRubyServer
     def git_ignored_path?(path)
       return false if @gitignore_missing
 
-      @git_ignore ||= File.open("#{@dir_path}/.gitignore").read
-      @git_ignore.each_line do |line|
+      git_ignore.each_line do |line|
         pattern = line[0..-2]
         return true if File.fnmatch?("./#{pattern}*", path, File::FNM_DOTMATCH)
       end
@@ -30,6 +28,10 @@ module ElasticRubyServer
     rescue Errno::ENOENT
       @gitignore_missing = true
       false
+    end
+
+    def git_ignore
+      @git_ignore ||= File.open("#{@dir_path}/.gitignore").read
     end
   end
 end

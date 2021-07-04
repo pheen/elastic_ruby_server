@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 module ElasticRubyServer
-  RSpec.describe RubyParser do
+  RSpec.describe Search do
     RootPath = "#{File.expand_path(File.dirname(__FILE__))}/examples"
     IndexName = :ruby_parser_test_index
 

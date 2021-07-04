@@ -13,7 +13,7 @@ end
 
 module ElasticRubyServer
   class Application
-    Port = 8341 # TODO: make sure this works if someone configures client port
+    Port = ENV.fetch("SERVER_PORT", 8341)
 
     def start
       socket = TCPServer.new(Port)
@@ -27,7 +27,7 @@ module ElasticRubyServer
         end
       end
     rescue SignalException => e
-      ElasticRubyServer.logger.error "We received a signal.  Let's bail: #{e}"
+      Log.error("Received kill signal: #{e}")
       exit(true)
     end
   end
