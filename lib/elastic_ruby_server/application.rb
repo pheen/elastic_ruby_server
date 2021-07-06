@@ -4,7 +4,7 @@ require "elasticsearch"
 require "find"
 require "json"
 require "socket"
-require 'digest/sha1'
+require "digest/sha1"
 require "logger"
 
 Dir["#{File.expand_path(File.dirname(__FILE__))}/**/*.rb"].each do |file|

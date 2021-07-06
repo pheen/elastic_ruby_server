@@ -34,16 +34,25 @@ module ElasticRubyServer
     end
 
     def start
+      # todo: improve consecutive_parse_fails
+      consecutive_parse_fails = 0
+
       loop do
+        return if consecutive_parse_fails >= 5
+
         json = receive_request
-        send_response(json)
+
+        if json
+          consecutive_parse_fails = 0
+          send_response(json)
+        else
+          consecutive_parse_fails += 1
+        end
       rescue JSON::ParserError
         Log.error("JSON parse error: #{json}")
       rescue Exception => e
-        Log.error("Something when horribly wrong: #{e}")
+        Log.error("Something exploded: #{e}")
         Log.error("Backtrace:\n#{e.backtrace * "\n"}")
-
-        # raise(e) # not sure about this, seems wrong
       rescue SignalException => e
         Log.error("Received kill signal: #{e}")
         exit(true)
@@ -68,10 +77,9 @@ module ElasticRubyServer
     end
 
     def send_response(json)
-      id = json["id"]
       event_name = "on_#{json["method"].gsub("/", "_")}"
 
-      return unless id && @events.respond_to?(event_name)
+      return unless @events.respond_to?(event_name)
 
       result = @events.send(event_name, json["params"])
       write_response(json, result)

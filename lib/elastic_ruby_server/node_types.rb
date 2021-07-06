@@ -24,8 +24,7 @@ module ElasticRubyServer
       end
 
       def end_column
-        offset = node.to_s.match(/defs\s*.*:(.*)(\n|\))/)[1].length + 9
-        start_column + offset
+        node.loc.name.last_column
       end
 
       def node_name
@@ -35,26 +34,25 @@ module ElasticRubyServer
 
     class DefNode < Assignment
       def end_column
-        offset = node.to_s.match(/def :(.*)(\n|\))/)[1].length + 4
-        start_column + offset
+        node.loc.name.last_column
       end
     end
 
     class LvasgnNode < Assignment
       def end_column
-        find_end_column
+        node.loc.name.last_column
       end
     end
 
     class IvasgnNode < Assignment
       def end_column
-        find_end_column
+        node.loc.name.last_column
       end
     end
 
     class CvasgnNode < Assignment
       def end_column
-        find_end_column
+        node.loc.name.last_column
       end
     end
 
@@ -63,6 +61,14 @@ module ElasticRubyServer
     class ConstNode < Usage
       def node_name
         node.children[1]
+      end
+
+      def start_column
+        node.loc.name.column
+      end
+
+      def end_column
+        node.loc.name.last_column
       end
     end
 
@@ -73,6 +79,11 @@ module ElasticRubyServer
       def node_name
         node.children[1]
       end
+
+      def start_line
+        node.loc.selector.line
+      end
+
 
       def start_column
         node.loc.selector.column

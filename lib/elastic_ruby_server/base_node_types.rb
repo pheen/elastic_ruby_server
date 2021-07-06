@@ -45,13 +45,6 @@ module ElasticRubyServer
       def scope_names
         [node_name]
       end
-
-      private
-
-      def find_end_column
-        offset = node.to_s.match(/#{node_type} :(.*)(\n|\))/)[1].length
-        start_column + offset
-      end
     end
 
     class Usage < Base
@@ -67,6 +60,7 @@ module ElasticRubyServer
         node_names(node)
       end
 
+      # todo: refactor the :casgn stuff out
       def start_column
         if node.type == :casgn
           node.loc.column

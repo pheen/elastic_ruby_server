@@ -50,20 +50,9 @@ module ElasticRubyServer
       @persistence.reindex(*file_paths)
     end
 
-
-    def on_textDocument_hover(params)
-      Log.debug("on_textDocument_hover")
-      Log.debug(params)
-      {}
-    end
-
-    def on_textDocument_documentSymbol(params)
-      Log.debug("on_textDocument_documentSymbol")
-      Log.debug(params)
-    end
-
-    def on_shutdown(_params)
-      Log.debug("on_shutdown")
+    def on_workspace_reindex(params)
+      Log.debug("on_workspace_reindex: #{params}")
+      @persistence.index_all(preserve: false)
     end
 
     private

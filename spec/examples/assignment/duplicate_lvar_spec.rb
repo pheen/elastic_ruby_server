@@ -1,4 +1,4 @@
-module LookupAssignments
+module Assignment
   def duplicate_lvar1
     duplicate = "value"
   end

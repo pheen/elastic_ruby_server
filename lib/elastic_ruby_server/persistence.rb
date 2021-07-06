@@ -92,10 +92,11 @@ module ElasticRubyServer
       )
     end
 
-    def index_all
-      return if client.indices.exists?(index: index_name)
+    def index_all(preserve: true)
+      return if client.indices.exists?(index: index_name) && preserve
 
       start_time = Time.now
+      i = 0
       Log.info("Starting to index workspace. Start Time: #{start_time}, Elasticsearch index: #{index_name}")
 
       delete_index
@@ -104,6 +105,7 @@ module ElasticRubyServer
       queued_requests = []
 
       FilePaths.new(@container_workspace_path).find_each do |file_path|
+        i += 1
         searchable_file_path = file_path.sub(@container_workspace_path, "")
 
         Serializer.new(file_path).serialize_nodes.each do |hash|
@@ -112,6 +114,8 @@ module ElasticRubyServer
         end
 
         if queued_requests.count > 50_000
+          Log.debug("Inserting queued requests (#{i / (Time.now - start_time).round(2)} docs\/s)")
+
           queued_requests_for_thread = queued_requests.dup
           queued_requests = []
 
