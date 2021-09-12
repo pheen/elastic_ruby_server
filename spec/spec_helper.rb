@@ -4,8 +4,17 @@ require "hashdiff"
 require "colorize"
 
 require "./lib/elastic_ruby_server/application.rb"
+require "./spec/test_helpers.rb"
 
 RSpec.configure do |config|
+  config.before(:suite) do
+    persistence.index_all
+    client.indices.refresh
+  end
+
+  config.after(:suite) do
+    persistence.delete_index
+  end
 end
 
 RSpec::Matchers.define :match_doc do |expected|
@@ -35,29 +44,4 @@ RSpec::Matchers.define :match_doc do |expected|
     raise
     # "expecting #{target["_source"]} to not match #{expected}, but it did"
   end
-end
-
-def pretty_hash_diff(actual, expected)
-  known_keys = ["category", "line"]
-  diff = Hashdiff.diff(actual, expected, indifferent: true)
-
-  diff.map! do |arr|
-    symbol, name, *values = arr
-    str = "#{symbol} #{name}: #{values}"
-
-    if known_keys.include?(name)
-      str.colorize(:light_blue)
-    else
-      case symbol
-      when "-"
-        str.colorize(:red)
-      when "+"
-        str.colorize(:blue)
-      when "~"
-        str.colorize(:yellow)
-      end
-    end
-  end
-
-  diff.join("\n")
 end
