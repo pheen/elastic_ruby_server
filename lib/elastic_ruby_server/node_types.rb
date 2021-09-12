@@ -15,7 +15,13 @@ module ElasticRubyServer
     module_function :build_node
 
     class ModuleNode < ConstantWithBlockAssignment; end
-    class ClassNode < ConstantWithBlockAssignment; end
+
+    class ClassNode < ConstantWithBlockAssignment;
+      def start_column
+        node.children[0].loc.name.column
+      end
+    end
+
     class CasgnNode < ConstantWithBlockAssignment; end
 
     class DefsNode < Assignment

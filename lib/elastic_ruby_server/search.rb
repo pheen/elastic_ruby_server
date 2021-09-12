@@ -54,26 +54,6 @@ module ElasticRubyServer
 
     attr_reader :index_name, :host_workspace_path
 
-    def find_definitions(host_file_path, position)
-      file_path = host_file_path.sub(host_workspace_path, "")
-      usage = query_usage(file_path, position)
-
-      return [] unless usage
-
-      query_assignment(file_path, usage).map do |doc|
-        location = SymbolLocation.build(
-          source: doc["_source"],
-          workspace_path: host_workspace_path
-        )
-
-        # if im_feeling_lucky(usage, doc)
-          # return location
-        # else
-          location
-        # end
-      end
-    end
-
     def find_symbols(query)
       body = {
         "size": 100,
@@ -112,6 +92,26 @@ module ElasticRubyServer
             workspace_path: host_workspace_path
           )
         }
+      end
+    end
+
+    def find_definitions(host_file_path, position)
+      file_path = host_file_path.sub(host_workspace_path, "")
+      usage = query_usage(file_path, position)
+
+      return [] unless usage
+
+      query_assignment(file_path, usage).map do |doc|
+        location = SymbolLocation.build(
+          source: doc["_source"],
+          workspace_path: host_workspace_path
+        )
+
+        # if im_feeling_lucky(usage, doc)
+          # return location
+        # else
+          location
+        # end
       end
     end
 

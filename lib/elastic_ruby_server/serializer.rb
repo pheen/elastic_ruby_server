@@ -3,6 +3,9 @@ module ElasticRubyServer
   class Serializer
     def initialize(file_path)
       contents = ::IO.binread(file_path)
+
+      # $DEBUG = true if file_path == "/Users/joelkorpela/dev/elastic_ruby_server/spec/examples/definitions.rb"
+
       @ast = Parser::Ruby26.parse(contents)
     rescue Parser::SyntaxError, Errno::ENOENT => e
       Log.info("Failed to read file path: #{file_path}")

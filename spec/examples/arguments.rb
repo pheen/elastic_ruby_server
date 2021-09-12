@@ -1,5 +1,6 @@
 module Arguments
   def multiple_args(arg1, arg2)
+    arg1 + arg2
   end
 
   # TODO:

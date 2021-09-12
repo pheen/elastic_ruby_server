@@ -8,6 +8,7 @@ require "./spec/test_helpers.rb"
 
 RSpec.configure do |config|
   config.before(:suite) do
+    persistence.delete_index
     persistence.index_all
     client.indices.refresh
   end
@@ -43,5 +44,24 @@ RSpec::Matchers.define :match_doc do |expected|
   failure_message_when_negated do |target|
     raise
     # "expecting #{target["_source"]} to not match #{expected}, but it did"
+  end
+end
+
+RSpec::Matchers.define :match_definition do |expected|
+  match do |actual|
+    expected_definition = {
+      start: { line: expected[:line] - 1, character: expected[:start] - 1 },
+      end:   { line: expected[:line] - 1, character: expected[:end] - 1 }
+    }
+
+    actual == expected_definition
+  end
+
+  failure_message do |target|
+    pretty_hash_diff(actual, expected)
+  end
+
+  failure_message_when_negated do |target|
+    raise
   end
 end
