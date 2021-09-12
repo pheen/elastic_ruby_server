@@ -18,7 +18,11 @@ module ElasticRubyServer
       node = NodeTypes.build_node(ast)
 
       if root
-        serialized << serialize(scope, node) unless node.is_a?(NodeTypes::NodeMissing)
+        unless node.is_a?(NodeTypes::NodeMissing)
+          serialized_node = serialize(scope, node)
+          serialized << serialized_node if serialized_node
+        end
+
         scope += node.scope_names
       end
 
@@ -26,9 +30,12 @@ module ElasticRubyServer
         starting_scope = scope.clone
         child_node = NodeTypes.build_node(child_ast)
 
-        serialized << serialize(scope, child_node) unless child_node.is_a?(NodeTypes::NodeMissing)
-        scope += child_node.scope_names
+        unless child_node.is_a?(NodeTypes::NodeMissing)
+          serialized_node = serialize(scope, child_node)
+          serialized << serialized_node if serialized_node
+        end
 
+        scope += child_node.scope_names
         serialize_nodes(child_ast, scope, serialized, root: false)
 
         scope.pop(scope_diff(scope, starting_scope))

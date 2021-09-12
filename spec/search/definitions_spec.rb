@@ -53,5 +53,15 @@ module ElasticRubyServer
         expect(find_definition("method1", 25, 5)).to match_definition(line: 20, start: 7, end: 14)
       end
     end
+
+    describe "wut" do
+      let(:file_path) { "/definitions/wut.rb" }
+
+      it "parses correctly" do
+        expect(find_definition("var1", 4, 5)).to match_definition(line: 3, start: 5, end: 9)
+        expect(find_definition("var2", 4, 11)).to match_definition(line: 3, start: 11, end: 15)
+      end
+    end
+
   end
 end

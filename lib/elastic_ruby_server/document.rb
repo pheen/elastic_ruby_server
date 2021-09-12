@@ -13,6 +13,10 @@ module ElasticRubyServer
           lte: node.end_column + 1
         }
       }
+    rescue => e
+      Log.debug("Node failed to build:")
+      Log.debug(node.inspect)
+      nil
     end
   end
 end

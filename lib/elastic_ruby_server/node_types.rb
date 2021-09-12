@@ -7,9 +7,15 @@ module ElasticRubyServer
       return NodeTypes::NodeMissing.new(ast) unless ast.respond_to?(:type)
 
       node_class_name = "#{ast.type.capitalize}Node"
-      NodeTypes.const_get(node_class_name).new(ast)
+      node = NodeTypes.const_get(node_class_name).new(ast)
+
+      if node.ignore?
+        NodeTypes::IgnoreDefinition.new(ast)
+      else
+        node
+      end
     rescue NameError
-      # warn "Missing node: #{node_class_name}"
+      # todo: look for "Missing node: #{node_class_name}"
       NodeTypes::NodeMissing.new(ast)
     end
     module_function :build_node
@@ -107,6 +113,10 @@ module ElasticRubyServer
     class CvarNode < Usage; end
     class IvarNode < Usage; end
     class SendNode < Usage
+      def ignore?
+        !node.loc.selector
+      end
+
       def node_name
         node.children[1]
       end

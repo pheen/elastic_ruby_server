@@ -16,6 +16,10 @@ module ElasticRubyServer
         self.class::Category
       end
 
+      def ignore?
+        false
+      end
+
       def node_name
         node.children[0]
       end
