@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require "elasticsearch"
+require "patron"
 require "parser/ruby26"
 require "git"
 require "concurrent-ruby"
@@ -19,6 +20,8 @@ module ElasticRubyServer
     Port = ENV.fetch("SERVER_PORT", 8341)
 
     def start
+      Log.info("Starting server version #{VERSION} server on port #{Port}")
+
       socket = TCPServer.new(Port)
 
       loop do
@@ -37,7 +40,6 @@ module ElasticRubyServer
     private
 
     def global_synchronization
-      # @global_synchronization ||= Synchronization.new
       @global_synchronization ||= Concurrent::FixedThreadPool.new(1)
     end
   end

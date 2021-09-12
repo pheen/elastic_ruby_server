@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "elasticsearch", "< 7.14"
+  spec.add_dependency "patron"
   spec.add_dependency "parser"
   spec.add_dependency "git"
   spec.add_dependency "concurrent-ruby"

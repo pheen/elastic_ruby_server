@@ -6,6 +6,7 @@ PATH
       elasticsearch (< 7.14)
       git
       parser
+      patron
 
 GEM
   remote: https://rubygems.org/
@@ -54,6 +55,7 @@ GEM
     multipart-post (2.1.1)
     parser (3.0.2.0)
       ast (~> 2.4.1)
+    patron (0.13.3)
     pry (0.13.1)
       coderay (~> 1.1)
       method_source (~> 1.0)

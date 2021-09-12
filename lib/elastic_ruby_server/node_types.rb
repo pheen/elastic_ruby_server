@@ -22,7 +22,24 @@ module ElasticRubyServer
       end
     end
 
-    class CasgnNode < ConstantWithBlockAssignment; end
+    # todo: can this be an Assignment?
+    class CasgnNode < ConstantWithBlockAssignment
+      def scope_names
+        [name]
+      end
+
+      def start_column
+        node.loc.column
+      end
+
+      def end_column
+        node.loc.last_column
+      end
+
+      def node_name(ast = node)
+        ast.children[1]
+      end
+    end
 
     class DefsNode < Assignment
       def scope_names

@@ -60,36 +60,23 @@ module ElasticRubyServer
         node_names(node)
       end
 
-      # todo: refactor the :casgn stuff out
       def start_column
-        if node.type == :casgn
-          node.loc.column
-        else
-          node.children[0].loc.column
-        end
+        node.children[0].loc.column
       end
 
       def end_column
-        if node.type == :casgn
-          node.loc.last_column
-        else
-          node.children[0].loc.last_column
-        end
+        node.children[0].loc.last_column
       end
 
       def node_name(ast = node)
-        if ast.type == :casgn
-          ast.children[1]
-        else
-          ast.children[0].children[1]
-        end
+        ast.children[0].children[1]
       end
 
       private
 
       def node_names(ast, names: [])
         name = node_name(ast)
-        children = ast.type != :casgn && ast.children[0].children[0] # namespace
+        children = ast.children[0].children[0] # namespace
 
         if children
           namespace(children).flatten.compact << name
