@@ -110,7 +110,7 @@ module ElasticRubyServer
         i += 1
         searchable_file_path = file_path.sub(@container_workspace_path, "")
 
-        Serializer.new(file_path).serialize_nodes.each do |hash|
+        Serializer.new(file_path: file_path).serialize_nodes.each do |hash|
           queued_requests << { index: { _index: index_name } }
           queued_requests << hash.merge(file_path: searchable_file_path)
         end
@@ -128,7 +128,7 @@ module ElasticRubyServer
       rescue Exception => error
         Log.error("Something went wrong when indexing file: #{file_path}")
         Log.error("Backtrace:")
-        Log.error(error.backtrace)
+        Log.error(error)
       end
 
       client.bulk(body: queued_requests) if queued_requests.any?
@@ -136,7 +136,7 @@ module ElasticRubyServer
       Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
     end
 
-    def reindex(*file_paths)
+    def reindex(*file_paths, content: {})
       Log.debug("Reindex starting on #{file_paths.count} files.")
 
       start_time = Time.now
@@ -147,7 +147,8 @@ module ElasticRubyServer
 
         {
           searchable_file_path: searchable_file_path,
-          readable_file_path: "#{@container_workspace_path}#{searchable_file_path}"
+          readable_file_path: "#{@container_workspace_path}#{searchable_file_path}",
+          content: content[path]
         }
       end
 
@@ -166,13 +167,14 @@ module ElasticRubyServer
       )
 
       path_attrs.each do |attrs|
-        if File.exist?(attrs[:readable_file_path])
-          nodes = Serializer.new(attrs[:readable_file_path]).serialize_nodes
+        serializer = Serializer.new(
+          file_path: attrs[:readable_file_path],
+          content: attrs[:content]
+        )
 
-          nodes.each do |serialized_node|
-            document = serialized_node.merge(file_path: attrs[:searchable_file_path])
-            es_client.queue([{ index: { _index: index_name }}, document])
-          end
+        serializer.serialize_nodes.each do |serialized_node|
+          document = serialized_node.merge(file_path: attrs[:searchable_file_path])
+          es_client.queue([{ index: { _index: index_name }}, document])
         end
       end
 

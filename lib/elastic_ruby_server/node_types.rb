@@ -25,25 +25,29 @@ module ElasticRubyServer
     # todo: can this be an Assignment?
     class CasgnNode < ConstantWithBlockAssignment
       def scope_names
-        [name]
+        [node_name]
       end
 
       def start_column
-        node.loc.column
+        node.loc.name.column
       end
 
       def end_column
-        node.loc.last_column
+        node.loc.name.last_column
       end
 
-      def node_name(ast = node)
-        ast.children[1]
+      def node_name
+        node.children[1]
       end
     end
 
     class DefsNode < Assignment
       def scope_names
         [:self, node_name] # todo: self isn't being added to scope for some reason?
+      end
+
+      def start_column
+        node.loc.name.column
       end
 
       def end_column
@@ -56,6 +60,10 @@ module ElasticRubyServer
     end
 
     class DefNode < Assignment
+      def start_column
+        node.loc.name.column
+      end
+
       def end_column
         node.loc.name.last_column
       end

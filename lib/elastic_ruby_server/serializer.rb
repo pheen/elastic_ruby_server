@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 module ElasticRubyServer
   class Serializer
-    def initialize(file_path)
-      contents = ::IO.binread(file_path)
-
-      # $DEBUG = true if file_path == "/Users/joelkorpela/dev/elastic_ruby_server/spec/examples/definitions.rb"
+    def initialize(file_path: nil, content: nil)
+      contents = content
+      contents ||= ::IO.binread(file_path)
 
       @ast = Parser::Ruby26.parse(contents)
     rescue Parser::SyntaxError, Errno::ENOENT => e
-      Log.info("Failed to read file path: #{file_path}")
+      # All good, the file was probably deleted.
+      # Log.info("Failed to read file path: #{file_path}")
       @ast = nil
     end
 

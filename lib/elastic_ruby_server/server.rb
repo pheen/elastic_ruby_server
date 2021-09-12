@@ -3,28 +3,26 @@ module ElasticRubyServer
   class Server
     Capabilities = {
       capabilities: {
-        textDocumentSync: 1,
-        hoverProvider: true,
-        signatureHelpProvider: {
-          triggerCharacters: ['(', ',']
-        },
         definitionProvider: true,
-        referencesProvider: true,
-        documentSymbolProvider: false,
         workspaceSymbolProvider: true,
-        xworkspaceReferencesProvider: true,
-        xdefinitionProvider: true,
-        xdependenciesProvider: true,
-        completionProvider: {
-          resolveProvider: true,
-          triggerCharacters: ['.', '::']
-        },
+        referencesProvider: false, # todo: implement
+        textDocumentSync: 0,
+        hoverProvider: false,
+        documentSymbolProvider: false,
         codeActionProvider: false,
-        renameProvider: true,
-        executeCommandProvider: {
-          commands: []
-        },
-        xpackagesProvider: true
+        renameProvider: false,
+        # signatureHelpProvider: {
+        #   triggerCharacters: ['(', ',']
+        # },
+        # workspaceReferencesProvider: true,
+        # completionProvider: {
+        #   resolveProvider: true,
+        #   triggerCharacters: ['.', '::']
+        # },
+        # executeCommandProvider: {
+        #   commands: []
+        # },
+        # xpackagesProvider: true
       }
     }.freeze
 
@@ -75,25 +73,19 @@ module ElasticRubyServer
 
       _clrf = @conn.gets
 
-      magic = vscode_cutoff_point = 8000
+      bytes_remaining = content_length
+      json = ""
 
-      if content_length > magic
-        json = ""
-        bytes_remaining = content_length
+      while bytes_remaining > 0
+        json_chunk = @conn.readpartial(bytes_remaining)
+        json += json_chunk
+        bytes_remaining -= json_chunk.bytesize
 
-        while json.bytesize < content_length
-          chunk_size = bytes_remaining > magic ? magic : bytes_remaining
-          json_chunk = @conn.readpartial(chunk_size).strip
-
-          json += json_chunk
-          bytes_remaining -= json_chunk.bytesize
-        end
-      else
-        json = @conn.readpartial(content_length)
+        Log.debug("Bytes remaining: #{bytes_remaining}...")
       end
 
       Log.debug("Received json: #{json}")
-      JSON.parse(json)
+      JSON.parse(json.strip)
     end
 
     def send_response(json)

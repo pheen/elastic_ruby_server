@@ -33,7 +33,7 @@ module ElasticRubyServer
           type: "def",
           scope: ["Basic"],
           line: 2,
-          columns: { gte: 3, lte: 19 }
+          columns: { gte: 7, lte: 19 }
         )
       end
 

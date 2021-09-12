@@ -58,7 +58,17 @@ RSpec::Matchers.define :match_definition do |expected|
   end
 
   failure_message do |target|
-    pretty_hash_diff(actual, expected)
+    expected_definition = {
+      start: { line: expected[:line], character: expected[:start] },
+      end:   { line: expected[:line], character: expected[:end] }
+    }
+
+    actual_definition = {
+      start: { line:  actual[:start][:line] + 1, character: actual[:start][:character] + 1 },
+      end:   { line: actual[:start][:line] + 1, character: actual[:end][:character] + 1 }
+    }
+
+    pretty_hash_diff(actual_definition, expected_definition)
   end
 
   failure_message_when_negated do |target|

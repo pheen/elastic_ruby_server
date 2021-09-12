@@ -19,20 +19,38 @@ module ElasticRubyServer
       result[:range]
     end
 
-    describe "basic" do
+    describe "nested constant names" do
       let(:file_path) { "/definitions.rb" }
 
-      it "nested class usage" do
+      it "class usage" do
         expect(find_definition("Layer1", 5, 9)).to match_definition(line: 2, start: 10, end: 16)
       end
 
-      it "nested class assignment usage" do
+      it "class assignment usage" do
         expect(find_definition("Layer2", 7, 7)).to match_definition(line: 5, start: 17, end: 23)
-      end
-
-      it "nested class assignment nested usage" do
         expect(find_definition("Layer1", 8, 7)).to match_definition(line: 2, start: 10, end: 16)
         expect(find_definition("Layer2", 8, 15)).to match_definition(line: 5, start: 17, end: 23)
+      end
+
+      it "constant assignment" do
+        expect(find_definition("Layer3", 13, 19)).to match_definition(line: 12, start: 19, end: 25)
+      end
+
+      it "constant assignment usage" do
+        expect(find_definition("Layer1", 12, 3)).to match_definition(line: 2, start: 10, end: 16)
+        expect(find_definition("Layer2", 12, 11)).to match_definition(line: 5, start: 17, end: 23)
+      end
+    end
+
+    describe "methods" do
+      let(:file_path) { "/definitions.rb" }
+
+      it "class methods" do
+        expect(find_definition("method1", 21, 16)).to match_definition(line: 17, start: 12, end: 19)
+      end
+
+      it "instance methods" do
+        expect(find_definition("method1", 25, 5)).to match_definition(line: 20, start: 7, end: 14)
       end
     end
   end
