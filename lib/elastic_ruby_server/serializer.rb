@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-require "parser/ruby26"
-
 module ElasticRubyServer
   class Serializer
     def initialize(file_path)

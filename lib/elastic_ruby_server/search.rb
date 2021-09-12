@@ -141,7 +141,7 @@ module ElasticRubyServer
             ],
             "should": [
               { "term": { "file_path.tree": file_path } },
-              { "terms": { "scope": usage["_source"]["scope"] } }
+              { "terms": { "scope": usage["_source"]["scope"].map(&:downcase) } } # todo: is this only a problem in kibana? downcase is a hack. elasticsearch isn't returning a hit if it's capitalized for some reason.
             ]
           }
         }
@@ -153,11 +153,37 @@ module ElasticRubyServer
       )
 
       results["hits"]["hits"].map do |doc|
-        SymbolLocation.build(
+        location = SymbolLocation.build(
           source: doc["_source"],
           workspace_path: host_workspace_path
         )
+
+        # if im_feeling_lucky(usage, doc)
+          # return location
+        # else
+          location
+        # end
       end
+    end
+
+    def im_feeling_lucky(usage, asgn)
+      return unless usage["_source"]["type"] == "lvar"
+
+      return unless asgn["_source"]["file_path"] == usage["_source"]["file_path"]
+      return unless asgn["_source"]["type"] == "lvasgn" || asgn["_source"]["type"] == "arg"
+      # return unless asgn["_score"].to_i > 6.5
+
+      scope_score = 0
+
+      asgn["_source"]["scope"].each_with_index do |name, index|
+        scope_score += 1 if usage["_source"]["scope"][index] == name
+      end
+
+      similar_scopes = ((usage["_source"]["scope"] - 2).length..usage["_source"]["scope"].length).include?(scope_score)
+
+      return unless similar_scopes
+
+      true
     end
 
     def lookup_vscode_type(type)

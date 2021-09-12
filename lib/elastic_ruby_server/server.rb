@@ -28,9 +28,9 @@ module ElasticRubyServer
       }
     }.freeze
 
-    def initialize(connection)
+    def initialize(connection, global_synchronization)
       @conn = connection
-      @events = Events.new
+      @events = Events.new(global_synchronization)
     end
 
     def start
@@ -63,6 +63,9 @@ module ElasticRubyServer
 
     def receive_request
       header = @conn.gets
+
+      Log.debug("Received header: #{header}")
+
       parse_request(header)
     end
 
@@ -71,8 +74,25 @@ module ElasticRubyServer
       return unless content_length
 
       _clrf = @conn.gets
-      json = @conn.readpartial(content_length)
 
+      magic = vscode_cutoff_point = 8000
+
+      if content_length > magic
+        json = ""
+        bytes_remaining = content_length
+
+        while json.bytesize < content_length
+          chunk_size = bytes_remaining > magic ? magic : bytes_remaining
+          json_chunk = @conn.readpartial(chunk_size).strip
+
+          json += json_chunk
+          bytes_remaining -= json_chunk.bytesize
+        end
+      else
+        json = @conn.readpartial(content_length)
+      end
+
+      Log.debug("Received json: #{json}")
       JSON.parse(json)
     end
 

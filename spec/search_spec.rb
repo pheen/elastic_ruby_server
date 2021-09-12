@@ -295,6 +295,7 @@ module ElasticRubyServer
     end
 
     def asgn_doc(name, scope = [])
+      # todo: actually call #find_definitions
       results = client.search(
         index: IndexName,
         body: {

@@ -1,3 +1,5 @@
+require "digest"
+
 # frozen_string_literal: true
 module ElasticRubyServer
   class Persistence
@@ -134,52 +136,59 @@ module ElasticRubyServer
       Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
     end
 
-    def reindex(*host_file_paths)
-      Log.debug("Reindex starting on #{host_file_paths.count} files.")
+    def reindex(*file_paths)
+      Log.debug("Reindex starting on #{file_paths.count} files.")
 
       start_time = Time.now
-      queued_requests = []
 
-      host_file_paths.each do |host_file_path|
-        searchable_file_path = host_file_path.sub(@host_workspace_path, "")
-        file_path = "#{@container_workspace_path}#{searchable_file_path}"
+      path_attrs = file_paths.map do |path|
+        file_path = path.start_with?(@host_workspace_path) ? path.sub(@host_workspace_path, "") : path
+        searchable_file_path = file_path.sub(@host_workspace_path, "")
 
-        response = client.delete_by_query(
-          index: index_name,
-          conflicts: "proceed",
-          body: {
-            "query": {
-              "term": {
-                "file_path.tree": searchable_file_path
-              }
+        {
+          searchable_file_path: searchable_file_path,
+          readable_file_path: "#{@container_workspace_path}#{searchable_file_path}"
+        }
+      end
+
+      searchable_file_paths = path_attrs.map { |path| path[:searchable_file_path] }
+
+      client.delete_by_query(
+        index: index_name,
+        conflicts: "proceed",
+        body: {
+          "query": {
+            "terms": {
+              "file_path.tree": searchable_file_paths
             }
           }
-        )
+        }
+      )
 
-        Serializer.new(file_path).serialize_nodes.each do |hash|
-          queued_requests << { index: { _index: index_name } }
-          queued_requests << hash.merge(file_path: searchable_file_path)
-        end
+      path_attrs.each do |attrs|
+        if File.exist?(attrs[:readable_file_path])
+          nodes = Serializer.new(attrs[:readable_file_path]).serialize_nodes
 
-        if queued_requests.count > 25_000
-          queued_requests_for_thread = queued_requests.dup
-          queued_requests = []
-
-          Thread.new do
-            client.bulk(body: queued_requests_for_thread)
+          nodes.each do |serialized_node|
+            document = serialized_node.merge(file_path: attrs[:searchable_file_path])
+            es_client.queue([{ index: { _index: index_name }}, document])
           end
         end
       end
 
-      client.bulk(body: queued_requests) if queued_requests.any?
+      es_client.flush
 
-      Log.debug("Finished reindexing in: #{Time.now - start_time} seconds.")
+      Log.debug("Finished reindexing #{file_paths.count} files in: #{Time.now - start_time} seconds.")
     end
 
     private
 
     def client
       @client ||= ElasticsearchClient.connection
+    end
+
+    def es_client
+      @es_client ||= ElasticsearchClient.new
     end
   end
 end

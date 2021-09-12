@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 require "elasticsearch"
+require "parser/ruby26"
+require "git"
+require "concurrent-ruby"
 
 require "find"
 require "json"
@@ -22,13 +25,20 @@ module ElasticRubyServer
         connection = socket.accept
 
         Thread.new do
-          server = Server.new(connection)
+          server = Server.new(connection, global_synchronization)
           server.start
         end
       end
     rescue SignalException => e
       Log.error("Received kill signal: #{e}")
       exit(true)
+    end
+
+    private
+
+    def global_synchronization
+      # @global_synchronization ||= Synchronization.new
+      @global_synchronization ||= Concurrent::FixedThreadPool.new(1)
     end
   end
 end

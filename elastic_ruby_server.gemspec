@@ -19,8 +19,10 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "elasticsearch", "< 7.14"
   spec.add_dependency "parser"
-  spec.add_dependency "elasticsearch"
+  spec.add_dependency "git"
+  spec.add_dependency "concurrent-ruby"
 
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "fuubar"

@@ -81,8 +81,8 @@ RUN adduser -D default \
 
 RUN gem update bundler
 
-RUN apk update
-RUN apk add curl make g++
+RUN apk update && apk upgrade
+RUN apk add curl make g++ git
 
 WORKDIR /app
 
