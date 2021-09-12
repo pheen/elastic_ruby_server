@@ -39,12 +39,17 @@ module ElasticRubyServer
     end
 
     def on_textDocument_didSave(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}}
-      @global_synchronization.post do
-        uri = params["textDocument"]["uri"]
-        file_path = strip_protocol(uri)
+      uri = params["textDocument"]["uri"]
+      file_path = strip_protocol(uri)
 
-        @persistence.reindex(file_path)
-      end
+      @persistence.reindex(file_path)
+    end
+
+    def on_textDocument_didChange(params) # {"textDocument":{"uri":"file:///Users/joelkorpela/clio/themis/test/testing.rb","version":26},"contentChanges":[{"text":"module NarWan\n class LetsGo\n before_action :another_method\n\n def self.a_method\n end\n\n def a_method(args)\n args\n end\n\n def another_method\n a_method\n end\n\n def new_method2\n\n end\n\n def new_method4\n\n end\n\n def new_method3\n\n end\n\n def new_method\n\n end\n\n def supported_method\n new_method\n new_method2\n new_method3\n new_method4\n\n local_var = \"value\"\n @nar = 'nar'\n @@bla = 'bla'\n\n local_\n\n local_var\n @nar\n @@bla\n end\n\n def create\n # {\"_index\"=>\"ruby_parser_index\", \"_type\"=>\"_doc\", \"_id\"=>\"E6vDB3oBjMXYsUxkfdEL\", \"_score\"=>15.857785, \"_source\"=>{\"scope\"=>[\"Manage\", \"Api\", \"V4\", \"SearchController\", \"index\", \"models_with_highlights\"], \"file_path\"=>\"/components/manage/app/controllers/manage/api/v4/search_controller.rb\", \"name\"=>\"filter\", \"line\"=>50, \"type\"=>\"send\", \"category\"=>\"usage\", \"columns\"=>{\"gte\"=>33, \"lte\"=>70}}},\n # {\"_index\"=>\"ruby_parser_index\", \"_type\"=>\"_doc\", \"_id\"=>\"FKvDB3oBjMXYsUxkfdEL\", \"_score\"=>15.857785, \"_source\"=>{\"scope\"=>[\"Manage\", \"Api\", \"V4\", \"SearchController\", \"index\", \"models_with_highlights\"], \"file_path\"=>\"/components/manage/app/controllers/manage/api/v4/search_controller.rb\", \"name\"=>\"parse_model_fields\", \"line\"=>50, \"type\"=>\"send\", \"category\"=>\"usage\", \"columns\"=>{\"gte\"=>33, \"lte\"=>63}}}\n a_method.another_method\n end\n end\nend\n\nNarWan::LetsGo\nNarWan::LetsGo.a_method\nNarWan::LetsGo.new.another_method\n\nmodule NarTwo\n module Nesting\n end\nend\n\nNarTwo::NewConstant = :value\nNarTwo::NewConstant\n\nmodule NarTwo::Nesting::FinalNest\n def nested_method\n end\nend\n\nmodule Foo\n class Bar\n class AnError < StandardError; end\n\n Constant = AnError\n end\nend\n"}]}
+      uri = params["textDocument"]["uri"]
+      file_path = strip_protocol(uri)
+
+      @persistence.reindex(file_path)
     end
 
     def on_workspace_didChangeWatchedFiles(params) # {"changes"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/extensions/rack_session_id.rb", "type"=>3}, {"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/app/services/foundations/lock.rb", "type"=>3}, ...

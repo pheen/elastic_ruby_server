@@ -60,7 +60,18 @@ module ElasticRubyServer
 
       return [] unless usage
 
-      query_assignment(file_path, usage)
+      query_assignment(file_path, usage).map do |doc|
+        location = SymbolLocation.build(
+          source: doc["_source"],
+          workspace_path: host_workspace_path
+        )
+
+        # if im_feeling_lucky(usage, doc)
+          # return location
+        # else
+          location
+        # end
+      end
     end
 
     def find_symbols(query)
@@ -104,8 +115,6 @@ module ElasticRubyServer
       end
     end
 
-    private
-
     def query_usage(file_path, position)
       line = position["line"].to_i + 1
       character = position["character"].to_i + 1
@@ -141,7 +150,7 @@ module ElasticRubyServer
             ],
             "should": [
               { "term": { "file_path.tree": file_path } },
-              { "terms": { "scope": usage["_source"]["scope"].map(&:downcase) } } # todo: is this only a problem in kibana? downcase is a hack. elasticsearch isn't returning a hit if it's capitalized for some reason.
+              { "terms": { "scope": usage["_source"]["scope"] } }
             ]
           }
         }
@@ -152,19 +161,10 @@ module ElasticRubyServer
         body: query
       )
 
-      results["hits"]["hits"].map do |doc|
-        location = SymbolLocation.build(
-          source: doc["_source"],
-          workspace_path: host_workspace_path
-        )
-
-        # if im_feeling_lucky(usage, doc)
-          # return location
-        # else
-          location
-        # end
-      end
+      results["hits"]["hits"]
     end
+
+    private
 
     def im_feeling_lucky(usage, asgn)
       return unless usage["_source"]["type"] == "lvar"

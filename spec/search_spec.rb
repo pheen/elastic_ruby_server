@@ -13,6 +13,12 @@ module ElasticRubyServer
       persistence.delete_index
     end
 
+    let(:workspace_path) { "" }
+
+    subject do
+      described_class.new(workspace_path, IndexName)
+    end
+
     describe "basic" do
       let(:file_path) { "/basic.rb" }
 
@@ -275,46 +281,15 @@ module ElasticRubyServer
     end
 
     def usage_doc(line:, col:)
-      results = client.search(
-        index: IndexName,
-        body: {
-          "query": {
-            "bool": {
-              "must": [
-                { "match": { "category": "usage" } },
-                { "match": { "line": line }},
-                { "term": { "columns": { "value": col }}},
-                { "term": { "file_path.tree": file_path } }
-              ]
-            }
-          }
-        }
+      subject.query_usage(
+        file_path,
+        { "line" => line - 1, "character" => col - 1 }
       )
-
-      results.dig("hits", "hits").first
     end
 
     def asgn_doc(name, scope = [])
-      # todo: actually call #find_definitions
-      results = client.search(
-        index: IndexName,
-        body: {
-          "query": {
-            "bool": {
-              "must": [
-                { "match": { "category": "assignment" } },
-                { "match": { "name": name }}
-              ],
-              "should": [
-                { "term": { "file_path.tree": file_path } },
-                { "terms": { "scope": scope } }
-              ]
-            }
-          }
-        }
-      )
-
-      results.dig("hits", "hits").first
+      usage = { "_source" => { "name" => name, "scope" => scope } }
+      subject.query_assignment(file_path, usage).first
     end
 
     def persistence

@@ -19,7 +19,7 @@ module ElasticRubyServer
           resolveProvider: true,
           triggerCharacters: ['.', '::']
         },
-        codeActionProvider: true,
+        codeActionProvider: false,
         renameProvider: true,
         executeCommandProvider: {
           commands: []
