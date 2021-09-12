@@ -32,6 +32,8 @@ module ElasticRubyServer
         @queued_requests.clear
       end
 
+      return unless requests.any?
+
       Thread.new do
         Log.debug("Inserting queued requests, count: #{requests.count}!")
         self.class.connection.bulk(body: requests)

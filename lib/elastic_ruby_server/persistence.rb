@@ -97,43 +97,26 @@ module ElasticRubyServer
     def index_all(preserve: true)
       return if client.indices.exists?(index: index_name) && preserve
 
+      Log.info("Starting to index workspace. Elasticsearch index: #{index_name}")
+
       start_time = Time.now
-      i = 0
-      Log.info("Starting to index workspace. Start Time: #{start_time}, Elasticsearch index: #{index_name}")
 
       delete_index
       create_index
 
-      queued_requests = []
-
       FilePaths.new(@container_workspace_path).find_each do |file_path|
-        i += 1
         searchable_file_path = file_path.sub(@container_workspace_path, "")
+        serializer = Serializer.new(file_path: file_path)
 
-        Serializer.new(file_path: file_path).serialize_nodes.each do |hash|
-          queued_requests << { index: { _index: index_name } }
-          queued_requests << hash.merge(file_path: searchable_file_path)
+        serializer.serialize_nodes.each do |hash|
+          document = hash.merge(file_path: searchable_file_path)
+          es_client.queue([{ index: { _index: index_name }}, document])
         end
-
-        if queued_requests.count > 50_000
-          Log.debug("Inserting queued requests (#{i / (Time.now - start_time).round(2)} docs\/s)")
-
-          queued_requests_for_thread = queued_requests.dup
-          queued_requests = []
-
-          Thread.new do
-            client.bulk(body: queued_requests_for_thread)
-          end
-        end
-      rescue Exception => error
-        Log.error("Something went wrong when indexing file: #{file_path}")
-        Log.error("Backtrace:")
-        Log.error(error)
       end
 
-      client.bulk(body: queued_requests) if queued_requests.any?
-
       Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
+
+      es_client.flush
     end
 
     def reindex(*file_paths, content: {})
