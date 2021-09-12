@@ -2,7 +2,11 @@
 module ElasticRubyServer
   class ElasticsearchClient
     def self.connection
-      @connection ||= Elasticsearch::Client.new(log: false, retry_on_failure: 3) do |f|
+      @connection ||= Elasticsearch::Client.new(
+        request_timeout: 60,
+        log: false,
+        retry_on_failure: 3
+      ) do |f|
         f.adapter :patron
       end
     end
