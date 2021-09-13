@@ -3,12 +3,22 @@ module ElasticRubyServer
   module NodeTypes
     include BaseNodeTypes
 
+    RailsMethods = [
+      :belongs_to,
+      :has_one,
+      :has_many,
+      :has_and_belongs_to_many
+    ].freeze
+
     def build_node(ast)
       return NodeTypes::NodeMissing.new(ast) unless ast.respond_to?(:type)
 
       node_class_name = "#{ast.type.capitalize}Node"
       node = NodeTypes.const_get(node_class_name).new(ast)
 
+      # if node.type == :send && RailsMethods.include?(node.node_name)
+        # NodeTypes::MetaNode.new(ast)
+      # elsif node.ignore?
       if node.ignore?
         NodeTypes::IgnoreDefinition.new(ast)
       else
@@ -93,6 +103,20 @@ module ElasticRubyServer
       end
     end
 
+    class MetaNode < Assignment;
+      def node_name
+        node.children[2].children[0]
+      end
+
+      def start_column
+        node.children[2].loc.column
+      end
+
+      def end_column
+        node.children[2].loc.last_column
+      end
+    end
+
     class ArgNode < Assignment; end
 
     class ConstNode < Usage
@@ -112,9 +136,15 @@ module ElasticRubyServer
     class LvarNode < Usage; end
     class CvarNode < Usage; end
     class IvarNode < Usage; end
+    class SymNode < Usage; end
     class SendNode < Usage
+      IgnoredNodeNames = [
+        :[]=,
+        :[]
+      ]
+
       def ignore?
-        !node.loc.selector
+        !node.loc.selector || IgnoredNodeNames.include?(node_name)
       end
 
       def node_name

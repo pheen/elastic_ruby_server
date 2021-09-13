@@ -37,10 +37,10 @@ end
 
 module TestHelpers
   def usage_doc(line:, col:)
-    subject.query_usage(
+    subject.query_usages(
       file_path,
       { "line" => line - 1, "character" => col - 1 }
-    )
+    ).first
   end
 
   def asgn_doc(name, scope = [])

@@ -104,6 +104,9 @@ module ElasticRubyServer
         result: result
       })
 
+      Log.debug("Sending response:")
+      Log.debug(response)
+
       @conn.write("Content-Length: #{response.length}\r\n")
       @conn.write("\r\n")
       @conn.write(response)

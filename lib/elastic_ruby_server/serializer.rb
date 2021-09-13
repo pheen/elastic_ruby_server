@@ -5,6 +5,8 @@ module ElasticRubyServer
       contents = content
       contents ||= ::IO.binread(file_path)
 
+      # binding.pry if file_path.include?("rails.rb")
+
       @ast = Parser::Ruby26.parse(contents)
     rescue Parser::SyntaxError, Errno::ENOENT => e
       # All good, the file was probably deleted.

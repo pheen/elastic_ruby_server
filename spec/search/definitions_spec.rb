@@ -61,6 +61,20 @@ module ElasticRubyServer
         expect(find_definition("var1", 4, 5)).to match_definition(line: 3, start: 5, end: 9)
         expect(find_definition("var2", 4, 11)).to match_definition(line: 3, start: 11, end: 15)
       end
+
+      it "finds variables in square bracket params" do
+        expect(find_definition("arg1", 9, 11)).to match_definition(line: 7, start: 17, end: 21)
+      end
+    end
+
+    describe "rails" do
+      let(:file_path) { "/definitions/rails.rb" }
+
+      it "understands rails helpers" do
+        # binding.pry
+        expect(find_definition("association1", 8, 5)).to match_definition(line: 2, start: 14, end: 27)
+        # expect(find_definition("var2", 4, 11)).to match_definition(line: 3, start: 11, end: 15)
+      end
     end
 
   end

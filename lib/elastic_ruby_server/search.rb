@@ -97,11 +97,20 @@ module ElasticRubyServer
 
     def find_definitions(host_file_path, position)
       file_path = host_file_path.sub(host_workspace_path, "")
-      usage = query_usage(file_path, position)
+      usages = query_usages(file_path, position)
 
-      return [] unless usage
+      Log.debug("Usages:")
+      Log.debug(usages)
 
-      query_assignment(file_path, usage).map do |doc|
+      return [] unless usages.any?
+
+      usage = usages.first
+      assignments = query_assignment(file_path, usage)
+
+      Log.debug("Assignments:")
+      Log.debug(assignments)
+
+      assignments.map do |doc|
         location = SymbolLocation.build(
           source: doc["_source"],
           workspace_path: host_workspace_path
@@ -115,7 +124,7 @@ module ElasticRubyServer
       end
     end
 
-    def query_usage(file_path, position)
+    def query_usages(file_path, position)
       line = position["line"].to_i + 1
       character = position["character"].to_i + 1
 
@@ -137,7 +146,7 @@ module ElasticRubyServer
         body: query
       )
 
-      results["hits"]["hits"].first
+      results["hits"]["hits"]
     end
 
     def query_assignment(file_path, usage)
@@ -146,7 +155,7 @@ module ElasticRubyServer
           "bool": {
             "must": [
               { "match": { "category": "assignment" } },
-              { "match": { "name": usage["_source"]["name"] }}
+              { "match": { "name.keyword": usage["_source"]["name"] }}
             ],
             "should": [
               { "term": { "file_path.tree": file_path } },
@@ -156,9 +165,14 @@ module ElasticRubyServer
         }
       }
 
+      sizes = {
+        "lvar" => 5
+      }
+
       results = client.search(
         index: index_name,
-        body: query
+        body: query,
+        size: sizes.fetch(usage["_source"]["type"], 100)
       )
 
       results["hits"]["hits"]

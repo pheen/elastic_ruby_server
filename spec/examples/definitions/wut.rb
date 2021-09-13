@@ -5,6 +5,7 @@ module Wut
   end
 
   def a_method2(arg1)
+    @var1 = {}
     @var1[arg1["key"]] = ""
   end
 end
