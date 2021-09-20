@@ -150,20 +150,52 @@ module ElasticRubyServer
     end
 
     def query_assignment(file_path, usage)
+      file_path_query = { "term": { "file_path.tree": file_path } }
+
+      type_map = {
+        const: ["module", "class", "casgn"],
+        cvar: ["cvasgn"],
+        ivar: ["ivasgn"],
+        lvar: ["lvasgn", "arg"],
+        send: ["defs", "def"],
+        sym: [],
+      }
+
+      type = usage["_source"]["type"]
+      restrict_types = type_map.fetch(type&.to_sym, [])
+      type_query = { "terms": { "type": restrict_types }}
+
+      must_matches = [
+        { "match": { "category": "assignment" } },
+        { "match": { "name.keyword": usage["_source"]["name"] }},
+      ]
+      should_matches = []
+
+      if restrict_types.any?
+        must_matches << type_query
+      end
+
+      usage["_source"]["scope"].each do |term|
+        should_matches << { "match": { "scope": term } }
+      end
+
+      if type == "arg" || type == "lvar"
+        must_matches << file_path_query
+      else
+        should_matches << file_path_query
+      end
+
       query = {
         "query": {
           "bool": {
-            "must": [
-              { "match": { "category": "assignment" } },
-              { "match": { "name.keyword": usage["_source"]["name"] }}
-            ],
-            "should": [
-              { "term": { "file_path.tree": file_path } },
-              { "terms": { "scope": usage["_source"]["scope"] } }
-            ]
+            "must": must_matches,
+            "should": should_matches
           }
         }
       }
+
+      Log.debug("query:")
+      Log.debug(query)
 
       sizes = {
         "lvar" => 5
@@ -175,7 +207,18 @@ module ElasticRubyServer
         size: sizes.fetch(usage["_source"]["type"], 100)
       )
 
-      results["hits"]["hits"]
+      hits = results["hits"]["hits"]
+      lucky_guess = hits.first
+
+      if lucky_guess && hits[1]
+        Log.debug("Lucky guess: #{(lucky_guess["_score"] >= (hits[1]["_score"] * 1.33))}, first_score: #{lucky_guess["_score"]}, second_score: #{hits[1]["_score"]}")
+      end
+
+      if (lucky_guess && hits[1]) && (lucky_guess["_score"] >= (hits[1]["_score"] * 1.33))
+        [results["hits"]["hits"].first]
+      else
+        results["hits"]["hits"]
+      end
     end
 
     private

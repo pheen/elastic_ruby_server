@@ -21,7 +21,7 @@ RSpec.configure do |config|
   end
 end
 
-RSpec::Matchers.define :match_doc do |expected|
+RSpec::Matchers.define :match_doc do |expected| # todo: add support for RSpec::Matchers.define as method definition
   match do |actual|
     return unless actual
 

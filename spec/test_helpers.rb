@@ -43,8 +43,14 @@ module TestHelpers
     ).first
   end
 
-  def asgn_doc(name, scope = [])
+  def asgn_docs(name, scope = [], type: nil)
     usage = { "_source" => { "name" => name, "scope" => scope } }
-    subject.query_assignment(file_path, usage).first
+    usage["_source"]["type"] = type if type
+
+    subject.query_assignment(file_path, usage)
+  end
+
+  def asgn_doc(name, scope = [], type: nil)
+    asgn_docs(name, scope, type: type).first
   end
 end
