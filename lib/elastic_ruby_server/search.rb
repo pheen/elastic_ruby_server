@@ -47,6 +47,10 @@ module ElasticRubyServer
 
     SymbolTypesForLookup = ["module", "class", "casgn", "defs", "def"].freeze
 
+    RestrictQuerySize = {
+      "lvar" => 5
+    }.freeze
+
     def initialize(host_workspace_path, index_name)
       @host_workspace_path = host_workspace_path
       @index_name = index_name
@@ -111,16 +115,10 @@ module ElasticRubyServer
       Log.debug(assignments)
 
       assignments.map do |doc|
-        location = SymbolLocation.build(
+        SymbolLocation.build(
           source: doc["_source"],
           workspace_path: host_workspace_path
         )
-
-        # if im_feeling_lucky(usage, doc)
-          # return location
-        # else
-          location
-        # end
       end
     end
 
@@ -150,72 +148,17 @@ module ElasticRubyServer
     end
 
     def query_assignment(file_path, usage)
-      file_path_query = { "term": { "file_path.tree": file_path } }
-
-      type_map = {
-        const: ["module", "class", "casgn"],
-        cvar: ["cvasgn"],
-        ivar: ["ivasgn"],
-        lvar: ["lvasgn", "arg"],
-        send: ["defs", "def"],
-        sym: [],
-      }
-
-      type = usage["_source"]["type"]
-      restrict_types = type_map.fetch(type&.to_sym, [])
-      type_query = { "terms": { "type": restrict_types }}
-
-      must_matches = [
-        { "match": { "category": "assignment" } },
-        { "match": { "name.keyword": usage["_source"]["name"] }},
-      ]
-      should_matches = []
-
-      if restrict_types.any?
-        must_matches << type_query
-      end
-
-      usage["_source"]["scope"].each do |term|
-        should_matches << { "match": { "scope": term } }
-      end
-
-      if type == "arg" || type == "lvar"
-        must_matches << file_path_query
-      else
-        should_matches << file_path_query
-      end
-
-      query = {
-        "query": {
-          "bool": {
-            "must": must_matches,
-            "should": should_matches
-          }
-        }
-      }
-
-      Log.debug("query:")
-      Log.debug(query)
-
-      sizes = {
-        "lvar" => 5
-      }
-
+      query = QueryBuilder.assignment_query(file_path, usage)
       results = client.search(
         index: index_name,
         body: query,
-        size: sizes.fetch(usage["_source"]["type"], 100)
+        size: RestrictQuerySize.fetch(usage.dig("_source", "type"), 100)
       )
-
       hits = results["hits"]["hits"]
-      lucky_guess = hits.first
+      lucky_guess = high_score_hit(hits)
 
-      if lucky_guess && hits[1]
-        Log.debug("Lucky guess: #{(lucky_guess["_score"] >= (hits[1]["_score"] * 1.33))}, first_score: #{lucky_guess["_score"]}, second_score: #{hits[1]["_score"]}")
-      end
-
-      if (lucky_guess && hits[1]) && (lucky_guess["_score"] >= (hits[1]["_score"] * 1.33))
-        [results["hits"]["hits"].first]
+      if lucky_guess
+        [lucky_guess]
       else
         results["hits"]["hits"]
       end
@@ -223,24 +166,18 @@ module ElasticRubyServer
 
     private
 
-    def im_feeling_lucky(usage, asgn)
-      return unless usage["_source"]["type"] == "lvar"
+    def high_score_hit(hits)
+      magic_score_multiplier = 1.33
+      first_hit = hits[0]
+      second_hit = hits[1]
 
-      return unless asgn["_source"]["file_path"] == usage["_source"]["file_path"]
-      return unless asgn["_source"]["type"] == "lvasgn" || asgn["_source"]["type"] == "arg"
-      # return unless asgn["_score"].to_i > 6.5
+      return unless first_hit && second_hit
 
-      scope_score = 0
+      Log.debug("Lucky guess: #{(first_hit["_score"] >= (second_hit["_score"] * magic_score_multiplier))}, first_score: #{first_hit["_score"]}, second_score: #{second_hit["_score"]}")
 
-      asgn["_source"]["scope"].each_with_index do |name, index|
-        scope_score += 1 if usage["_source"]["scope"][index] == name
+      if first_hit["_score"] >= (second_hit["_score"] * magic_score_multiplier)
+        first_hit
       end
-
-      similar_scopes = ((usage["_source"]["scope"] - 2).length..usage["_source"]["scope"].length).include?(scope_score)
-
-      return unless similar_scopes
-
-      true
     end
 
     def lookup_vscode_type(type)
