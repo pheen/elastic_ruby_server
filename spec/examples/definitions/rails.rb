@@ -1,13 +1,13 @@
 module MockUser
-  belongs_to :association1
-  has_one :association2
-  has_many :association3
-  has_and_belongs_to_many :association4
+  belongs_to :belongs_to_assoc
+  has_one :has_one_assoc
+  has_many :has_many_assoc, :through => :has_and_belongs_to_many_assoc
+  has_and_belongs_to_many :has_and_belongs_to_many_assoc
 
   def a_method
-    association1
-    association2
-    association3
-    association4
+    belongs_to_assoc
+    has_one_assoc
+    has_many_assoc
+    has_and_belongs_to_many_assoc
   end
 end

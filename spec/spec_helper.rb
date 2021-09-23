@@ -10,7 +10,7 @@ RSpec.configure do |config|
   config.before(:suite) do
     persistence.delete_index
 
-    thread = persistence.index_all
+    thread = persistence.index_all(preserve: false)
     thread.join
 
     client.indices.refresh

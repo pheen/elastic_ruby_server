@@ -15,8 +15,8 @@ module ElasticRubyServer
 
       index_name = elasticsearch_index_name(@host_workspace_path)
       project_name = find_name(host_project_root)
-      @container_workspace_path = @host_workspace_path.sub(host_project_root, "#{@project_root}#{project_name}")
 
+      @container_workspace_path = @host_workspace_path.sub(host_project_root, "#{@project_root}#{project_name}")
       @search = Search.new(@host_workspace_path, index_name)
       @persistence = Persistence.new(@host_workspace_path, @container_workspace_path, index_name)
 

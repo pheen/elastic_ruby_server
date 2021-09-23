@@ -6,7 +6,7 @@ module ElasticRubyServer
       cvar: ["cvasgn"],
       ivar: ["ivasgn"],
       lvar: ["lvasgn", "arg"],
-      send: ["defs", "def"],
+      send: ["defs", "def", "send"],
       sym: [],
     }.freeze
 

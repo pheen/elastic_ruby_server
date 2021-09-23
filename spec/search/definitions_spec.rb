@@ -71,9 +71,11 @@ module ElasticRubyServer
       let(:file_path) { "/definitions/rails.rb" }
 
       it "understands rails helpers" do
-        # binding.pry
-        expect(find_definition("association1", 8, 5)).to match_definition(line: 2, start: 14, end: 27)
-        # expect(find_definition("var2", 4, 11)).to match_definition(line: 3, start: 11, end: 15)
+        expect(find_definition("belongs_to_assoc", 8, 5)).to match_definition(line: 2, start: 14, end: 31)
+        expect(find_definition("has_one_assoc", 9, 5)).to match_definition(line: 3, start: 11, end: 25)
+        expect(find_definition("has_many_assoc", 10, 5)).to match_definition(line: 4, start: 12, end: 27)
+        expect(find_definition("has_and_belongs_to_many_assoc", 11, 5)).to match_definition(line: 5, start: 27, end: 57)
+        # todo: polymorph as:
       end
     end
 

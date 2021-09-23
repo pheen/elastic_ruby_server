@@ -16,13 +16,14 @@ module ElasticRubyServer
       node_class_name = "#{ast.type.capitalize}Node"
       node = NodeTypes.const_get(node_class_name).new(ast)
 
-      # if node.type == :send && RailsMethods.include?(node.node_name)
-        # NodeTypes::MetaNode.new(ast)
-      # elsif node.ignore?
       if node.ignore?
         NodeTypes::IgnoreDefinition.new(ast)
       else
-        node
+        if node.node_type == :send && RailsMethods.include?(node.node_name)
+          NodeTypes::MetaNode.new(ast)
+        else
+          node
+        end
       end
     rescue NameError
       # todo: look for "Missing node: #{node_class_name}"
