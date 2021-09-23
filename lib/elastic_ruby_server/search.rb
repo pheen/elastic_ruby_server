@@ -45,11 +45,8 @@ module ElasticRubyServer
       arg: SK[:variable]
     }.freeze
 
-    SymbolTypesForLookup = ["module", "class", "casgn", "defs", "def"].freeze
-
-    RestrictQuerySize = {
-      "lvar" => 5
-    }.freeze
+    SymbolTypesForLookup = ["module", "class", "casgn", "defs", "def", "send"].freeze
+    RestrictQuerySize = { "lvar" => 5 }.freeze
 
     def initialize(host_workspace_path, index_name)
       @host_workspace_path = host_workspace_path
