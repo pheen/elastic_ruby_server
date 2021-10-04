@@ -43,19 +43,15 @@ module ElasticRubyServer
 
     class NodeMissing < Base; end
 
+    class Usage < Base
+      Category = :usage
+    end
+
     class Assignment < Base
       Category = :assignment
 
       def scope_names
         [node_name]
-      end
-    end
-
-    class Usage < Base
-      Category = :usage
-
-      def scope_names
-        []
       end
     end
 
