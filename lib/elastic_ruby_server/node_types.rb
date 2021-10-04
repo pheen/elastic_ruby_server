@@ -10,6 +10,11 @@ module ElasticRubyServer
       :has_and_belongs_to_many
     ].freeze
 
+    RspecMethods = [
+      :let!,
+      :let
+    ].freeze
+
     def build_node(ast)
       return NodeTypes::NodeMissing.new(ast) unless ast.respond_to?(:type)
 
@@ -19,7 +24,7 @@ module ElasticRubyServer
       if node.ignore?
         NodeTypes::IgnoreDefinition.new(ast)
       else
-        if node.node_type == :send && RailsMethods.include?(node.node_name)
+        if node.node_type == :send && RailsMethods.include?(node.node_name) || RspecMethods.include?(node.node_name)
           NodeTypes::MetaNode.new(ast)
         else
           node
@@ -36,6 +41,28 @@ module ElasticRubyServer
     class ClassNode < ConstantWithBlockAssignment;
       def start_column
         node.children[0].loc.name.column
+      end
+    end
+
+    class BlockNode < ConstantWithBlockAssignment
+      def scope_names
+        # todo: refactor this rspec stuff
+        if node_name == :describe
+          children = node.children[0].children[2].children
+
+          if children[1]
+            # Rspec.describe Klass do ...
+            [:RSpec, children[1]]
+          else
+            # describe "thing" do ...
+            [:describe, children[0]]
+          end
+        elsif node_name == :context
+          text = node.children[0].children[2].children[0]
+          [:context, text]
+        else
+          [node_name]
+        end
       end
     end
 

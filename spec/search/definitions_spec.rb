@@ -79,5 +79,29 @@ module ElasticRubyServer
       end
     end
 
+    describe "rspec" do
+      let(:file_path) { "/definitions/rspec.rb" }
+
+      it "finds let and let! definitions" do
+        expect(find_definition("let_bang", 7, 7)).to match_definition(line: 2, start: 8, end: 17)
+        expect(find_definition("lazy_let", 8, 7)).to match_definition(line: 3, start: 7, end: 16)
+      end
+
+      it "finds let and let! definition overrides" do
+        expect(find_definition("let_bang", 18, 7)).to match_definition(line: 13, start: 10, end: 19)
+        expect(find_definition("lazy_let", 19, 7)).to match_definition(line: 14, start: 9, end: 18)
+      end
+
+      it "handles inline it" do
+        expect(find_definition("let_bang", 24, 8)).to match_definition(line: 2, start: 8, end: 17)
+        expect(find_definition("lazy_let", 24, 18)).to match_definition(line: 3, start: 7, end: 16)
+      end
+
+      it "handles describe blocks" do
+        expect(find_definition("let_bang", 28, 7)).to match_definition(line: 2, start: 8, end: 17)
+        expect(find_definition("lazy_let", 29, 7)).to match_definition(line: 3, start: 7, end: 16)
+      end
+    end
+
   end
 end

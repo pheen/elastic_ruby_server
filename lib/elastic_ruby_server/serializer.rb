@@ -25,7 +25,7 @@ module ElasticRubyServer
           serialized << serialized_node if serialized_node
         end
 
-        scope += node.scope_names
+        scope += node.scope_names.compact
       end
 
       ast.children.each do |child_ast|
@@ -37,7 +37,7 @@ module ElasticRubyServer
           serialized << serialized_node if serialized_node
         end
 
-        scope += child_node.scope_names
+        scope += child_node.scope_names.compact
         serialize_nodes(child_ast, scope, serialized, root: false)
 
         scope.pop(scope_diff(scope, starting_scope))
