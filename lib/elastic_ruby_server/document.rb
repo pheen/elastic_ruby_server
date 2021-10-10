@@ -3,7 +3,7 @@ module ElasticRubyServer
   class Document
     def self.build(scope, node)
       {
-        scope: scope,
+        scope: scope + node.scope,
         category: node.category,
         name: node.node_name,
         type: node.node_type,

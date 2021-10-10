@@ -89,24 +89,24 @@ module ElasticRubyServer
         let(:file_path) { "/usage/namespaced_constants.rb" }
 
         it "finds each usage" do
-          expect(usage_doc(line: 3, col: 5)).to match_doc(
+          expect(usage_doc(line: 10, col: 5)).to match_doc(
             name: "Module1",
             type: "const",
             scope: ["Usage", "NamespacedConstants"],
             columns: { gte: 5, lte: 12 }
           )
 
-          expect(usage_doc(line: 3, col: 14)).to match_doc(
+          expect(usage_doc(line: 10, col: 14)).to match_doc(
             name: "Module2",
             type: "const",
-            scope: ["Usage", "NamespacedConstants"],
+            scope: ["Usage", "NamespacedConstants", "Module1"],
             columns: { gte: 14, lte: 21 }
           )
 
-          expect(usage_doc(line: 3, col: 23)).to match_doc(
+          expect(usage_doc(line: 10, col: 23)).to match_doc(
             name: "Module3",
             type: "const",
-            scope: ["Usage", "NamespacedConstants"],
+            scope: ["Usage", "NamespacedConstants", "Module1", "Module2"],
             columns: { gte: 23, lte: 30 }
           )
         end

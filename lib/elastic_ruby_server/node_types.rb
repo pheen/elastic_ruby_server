@@ -148,6 +148,10 @@ module ElasticRubyServer
     class ArgNode < Assignment; end
 
     class ConstNode < Usage
+      def scope
+        build_scope_names(node.children[0]).reverse
+      end
+
       def node_name
         node.children[1]
       end
@@ -158,6 +162,21 @@ module ElasticRubyServer
 
       def end_column
         node.loc.name.last_column
+      end
+
+      private
+
+      def build_scope_names(child_node, names = [])
+        return [] unless child_node
+
+        child_name = child_node.children[1]
+        names << child_name
+
+        if child_node.children[0]
+          build_scope_names(child_node.children[0], names)
+        end
+
+        names
       end
     end
 

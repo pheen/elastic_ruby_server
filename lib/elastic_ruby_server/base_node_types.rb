@@ -8,6 +8,10 @@ module ElasticRubyServer
 
       attr_reader :node
 
+      def scope
+        []
+      end
+
       def scope_names
         []
       end
