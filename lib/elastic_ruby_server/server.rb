@@ -98,6 +98,8 @@ module ElasticRubyServer
     end
 
     def write_response(json, result)
+      return unless json["id"]
+
       response = JSON.unparse({
         jsonrpc: "2.0",
         id: json["id"],
