@@ -84,7 +84,7 @@ RUN gem update bundler
 RUN apk update && apk upgrade
 # curl-dev needed for patron
 RUN apk add --update curl-dev
-RUN apk add curl make g++
+RUN apk add git curl make g++
 
 WORKDIR /app
 
