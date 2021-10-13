@@ -112,6 +112,9 @@ module ElasticRubyServer
           document = hash.merge(file_path: searchable_file_path)
           es_client.queue([{ index: { _index: index_name }}, document])
         end
+      rescue => e
+        Log.error("Failed to serialize file: #{searchable_file_path}")
+        Log.error(e)
       end
 
       Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
