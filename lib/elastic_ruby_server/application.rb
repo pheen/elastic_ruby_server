@@ -3,6 +3,7 @@ require "elasticsearch"
 require "patron"
 require "parser/ruby26"
 require "concurrent-ruby"
+require "git"
 
 require "find"
 require "json"
