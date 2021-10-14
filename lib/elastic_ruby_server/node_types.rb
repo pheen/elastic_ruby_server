@@ -146,6 +146,8 @@ module ElasticRubyServer
     end
 
     class ArgNode < Assignment; end
+    class KwargNode < Assignment; end
+    class KwoptargNode < Assignment; end
 
     class ConstNode < Usage
       def scope

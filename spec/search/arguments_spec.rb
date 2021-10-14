@@ -25,6 +25,22 @@ module ElasticRubyServer
           columns: { gte: 27, lte: 31 }
         )
       end
+
+      it "keyword arg assignment" do
+        expect(asgn_doc("arg3")).to match_doc(
+          type: "kwoptarg",
+          scope: ["Arguments", "keyword_args"],
+          line: 6,
+          columns: { gte: 20, lte: 30 }
+        )
+
+        expect(asgn_doc("arg4")).to match_doc(
+          type: "kwarg",
+          scope: ["Arguments", "keyword_args"],
+          line: 6,
+          columns: { gte: 32, lte: 37 }
+        )
+      end
     end
   end
 end

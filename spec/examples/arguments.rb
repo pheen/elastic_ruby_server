@@ -3,7 +3,6 @@ module Arguments
     arg1 + arg2
   end
 
-  # TODO:
-  def keyword_args(arg1:, arg2:)
+  def keyword_args(arg3: :val, arg4:)
   end
 end
