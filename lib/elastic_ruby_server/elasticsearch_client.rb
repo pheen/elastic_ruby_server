@@ -24,7 +24,7 @@ module ElasticRubyServer
       end
     end
 
-    def flush
+    def flush(refresh_index: nil)
       requests = []
 
       @lock.synchronize do
@@ -37,6 +37,7 @@ module ElasticRubyServer
       Thread.new do
         Log.debug("Inserting queued requests, count: #{requests.count}!")
         self.class.connection.bulk(body: requests)
+        self.class.connection.indices.refresh(index: refresh_index) if refresh_index
       end
     end
   end

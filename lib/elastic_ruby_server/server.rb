@@ -6,7 +6,7 @@ module ElasticRubyServer
         definitionProvider: true,
         workspaceSymbolProvider: true,
         referencesProvider: false, # todo: implement
-        textDocumentSync: 0,
+        textDocumentSync: 2,
         hoverProvider: false,
         documentSymbolProvider: false,
         codeActionProvider: false,

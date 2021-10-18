@@ -119,7 +119,7 @@ module ElasticRubyServer
 
       Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
 
-      es_client.flush
+      es_client.flush(refresh_index: index_name)
     end
 
     def reindex(*file_paths, content: {})
@@ -164,7 +164,7 @@ module ElasticRubyServer
         end
       end
 
-      es_client.flush
+      es_client.flush(refresh_index: index_name)
 
       Log.debug("Finished reindexing #{file_paths.count} files in: #{Time.now - start_time} seconds.")
     end
