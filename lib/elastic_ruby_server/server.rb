@@ -84,7 +84,12 @@ module ElasticRubyServer
         Log.debug("Bytes remaining: #{bytes_remaining}...")
       end
 
-      Log.debug("Received json: #{json}")
+      if json.bytesize < 2000
+        Log.debug("Received json: #{json}")
+      else
+        Log.debug("Received large json blob")
+      end
+
       JSON.parse(json.strip)
     end
 

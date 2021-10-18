@@ -7,7 +7,6 @@ module ElasticRubyServer
       @global_synchronization = global_synchronization
       @local_synchronization = Concurrent::FixedThreadPool.new(3)
       @buffer_synchronization = Concurrent::FixedThreadPool.new(1)
-      @change_synchronization = Concurrent::FixedThreadPool.new(1)
       @open_files_buffer = {}
     end
 
