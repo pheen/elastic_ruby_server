@@ -25,7 +25,13 @@ module ElasticRubyServer
         NodeTypes::IgnoreDefinition.new(ast)
       else
         if node.node_type == :send && RailsMethods.include?(node.node_name) || RspecMethods.include?(node.node_name)
-          NodeTypes::MetaNode.new(ast)
+          meta_node = NodeTypes::MetaNode.new(ast)
+
+          if meta_node.ignore?
+            NodeTypes::IgnoreDefinition.new(ast)
+          else
+            meta_node
+          end
         else
           node
         end
@@ -132,6 +138,10 @@ module ElasticRubyServer
     end
 
     class MetaNode < Assignment;
+      def ignore?
+        node.children[2].nil?
+      end
+
       def node_name
         node.children[2].children[0]
       end
