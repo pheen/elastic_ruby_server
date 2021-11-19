@@ -29,28 +29,36 @@ module ElasticRubyServer
     def on_initialized(_hash)
       Log.debug(`/app/exe/es_check.sh`)
 
-      @local_synchronization.post do
+      queue_task(worker: @local_synchronization) do
         @persistence.index_all(preserve: true)
-      rescue => e
-        Log.debug("Error in thread:")
-        Log.debug(e)
+      end
+    end
+
+    def on_workspace_reindex(params)
+      queue_task(worker: @local_synchronization) do
+        Log.debug("on_workspace_reindex: #{params}")
+        @persistence.index_all(preserve: false)
       end
     end
 
     def on_textDocument_didSave(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}}
-      @local_synchronization.post do
+      queue_task(worker: @local_synchronization) do
         uri = params["textDocument"]["uri"]
         file_path = strip_protocol(uri)
 
         @persistence.reindex(file_path)
-      rescue => e
-        Log.debug("Error in thread:")
-        Log.debug(e)
+      end
+    end
+
+    def on_workspace_didChangeWatchedFiles(params) # {"changes"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/extensions/rack_session_id.rb", "type"=>3}, {"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/app/services/foundations/lock.rb", "type"=>3}, ...
+      queue_task(worker: @global_synchronization) do
+        file_paths = strip_protocols(params["changes"])
+        @persistence.reindex(*file_paths)
       end
     end
 
     def on_textDocument_didOpen(params) # "textDocument":{"uri":"file:///Users/joelkorpela/clio/themis/components/payments/spec/services/payments/stripe/provider_spec.rb","languageId":"ruby","version":1,"text":"module Payments\n  module Stripe\n    describe Provider do\n      let(:connected_account_id) { provider_account.external_id }\n      let(:provider_account) { create(:payments_stripe_account) }\n      let(:account) { provider_account.account }\n      let!(:signup) { create(:payments_stripe_signup, application_status: :success, account: account) }\n\n      subject { provider_account.provider }\n\n      describe \".#get_api_version\" do\n        subject { Payments::Stripe::Provider.get_api_version }\n\n        let(:api_version) { \"2020-08-27\" }\n\n        it \"fetches the stripe api version\" do\n          result = subject\n          expect(result).to eq(api_version)\n        end\n      end\n\n      describe \"#default_required_payment_fields\" do\n        let(:expected_default_payment_fields) { \"cvv,name,email,address1,city,state,postal_code,country\" }\n\n        it \"has the expected default required payment fields\" do\n          expect(subject.default_required_payment_fields).to eq(expected_default_payment_fields)\n        end\n      end\n\n      de...
-      @buffer_synchronization.post do
+      queue_task(worker: @buffer_synchronization) do
         uri = params["textDocument"]["uri"]
         file_path = strip_protocol(uri)
         file_content = params["textDocument"]["text"]
@@ -58,28 +66,20 @@ module ElasticRubyServer
 
         @open_files_buffer[file_path] = file_buffer
         @persistence.reindex(file_path, content: { file_path => file_content })
-      rescue => e
-        Log.debug("Error in thread:")
-        Log.debug(e)
       end
     end
 
     def on_textDocument_didClose(params) # "textDocument":{"uri":"file:///Users/joelkorpela/clio/themis/components/payments/spec/services/payments/stripe/provider_spec.rb","languageId":"ruby","version":1,"text":"module Payments\n  module Stripe\n    describe Provider do\n      let(:connected_account_id) { provider_account.external_id }\n      let(:provider_account) { create(:payments_stripe_account) }\n      let(:account) { provider_account.account }\n      let!(:signup) { create(:payments_stripe_signup, application_status: :success, account: account) }\n\n      subject { provider_account.provider }\n\n      describe \".#get_api_version\" do\n        subject { Payments::Stripe::Provider.get_api_version }\n\n        let(:api_version) { \"2020-08-27\" }\n\n        it \"fetches the stripe api version\" do\n          result = subject\n          expect(result).to eq(api_version)\n        end\n      end\n\n      describe \"#default_required_payment_fields\" do\n        let(:expected_default_payment_fields) { \"cvv,name,email,address1,city,state,postal_code,country\" }\n\n        it \"has the expected default required payment fields\" do\n          expect(subject.default_required_payment_fields).to eq(expected_default_payment_fields)\n        end\n      end\n\n      de...
-      @buffer_synchronization.post do
+      queue_task(worker: @buffer_synchronization) do
         uri = params["textDocument"]["uri"]
         file_path = strip_protocol(uri)
 
         @open_files_buffer.delete(file_path)
-      rescue => e
-        Log.debug("Error in thread:")
-        Log.debug(e)
       end
     end
 
-    SLEEP_TIME = 0.33
-
     def on_textDocument_didChange(params) # {"textDocument":{"uri":"file:///Users/joelkorpela/clio/themis/components/payments/spec/services/payments/stripe/provider_spec.rb","version":3},"contentChanges":[{"range":{"start":{"line":8,"character":6},"end":{"line":8,"character":6}},"rangeLength":0,"text":"\n      "},{"range":{"start":{"line":8,"character":0},"end":{"line":8,"character":6}},"rangeLength":6,"text":""}]}
-      @buffer_synchronization.post do
+      queue_task(worker: @buffer_synchronization) do
         uri = params["textDocument"]["uri"]
         file_path = strip_protocol(uri)
         file_buffer = @open_files_buffer[file_path]
@@ -102,7 +102,7 @@ module ElasticRubyServer
         end
 
         if @buffer_synchronization.queue_length == 0
-          sleep(SLEEP_TIME) unless changes.first["text"] == "."
+          sleep(0.33) unless changes.first["text"] == "."
 
           if @buffer_synchronization.queue_length == 0
             if @last_valid_buffer[file_path].text == file_buffer.text
@@ -113,48 +113,7 @@ module ElasticRubyServer
             end
           end
         end
-      rescue => e
-        Log.debug("Error in thread:")
-        Log.debug(e)
       end
-    end
-
-    def on_workspace_reindex(params)
-      @local_synchronization.post do
-        Log.debug("on_workspace_reindex: #{params}")
-        @persistence.index_all(preserve: false)
-      rescue => e
-        Log.debug("Error in thread:")
-        Log.debug(e)
-      end
-    end
-
-    def on_workspace_didChangeWatchedFiles(params) # {"changes"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/extensions/rack_session_id.rb", "type"=>3}, {"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/app/services/foundations/lock.rb", "type"=>3}, ...
-      @global_synchronization.post do
-        file_paths = strip_protocols(params["changes"])
-        @persistence.reindex(*file_paths)
-      rescue => e
-        Log.debug("Error in thread:")
-        Log.debug(e)
-      end
-    end
-
-    def on_textDocument_definition(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>19, "character"=>16}}
-      uri = params["textDocument"]["uri"]
-      file_path = strip_protocol(uri)
-
-      assignments = @search.find_definitions(file_path, params["position"])
-
-      assignments.map do |doc|
-        SymbolLocation.build(
-          source: doc["_source"],
-          workspace_path: @host_workspace_path
-        )
-      end
-    end
-
-    def on_workspace_symbol(params) # {"query"=>"abc"}
-      @search.find_symbols(params["query"])
     end
 
     def on_textDocument_completion(params) # {"textDocument":{"uri":"file:///Users/joelkorpela/dev/elastic_ruby_server/lib/elastic_ruby_server/events.rb"},"position":{"line":105,"character":7},"context":{"triggerKind":2,"triggerCharacter":"."}}
@@ -182,7 +141,34 @@ module ElasticRubyServer
       @search.find_method_definitions(klass)
     end
 
+    def on_textDocument_definition(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>19, "character"=>16}}
+      uri = params["textDocument"]["uri"]
+      file_path = strip_protocol(uri)
+
+      assignments = @search.find_definitions(file_path, params["position"])
+
+      assignments.map do |doc|
+        SymbolLocation.build(
+          source: doc["_source"],
+          workspace_path: @host_workspace_path
+        )
+      end
+    end
+
+    def on_workspace_symbol(params) # {"query"=>"abc"}
+      @search.find_symbols(params["query"])
+    end
+
     private
+
+    def queue_task(worker:)
+      worker.post do
+        yield
+      rescue => e
+        Log.debug("Error in thread:")
+        Log.debug(e)
+      end
+    end
 
     def host_project_root
       @host_project_roots
