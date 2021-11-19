@@ -122,7 +122,7 @@ module ElasticRubyServer
       es_client.flush(refresh_index: index_name)
     end
 
-    def reindex(*file_paths, content: {})
+    def reindex(*file_paths, content: {}, inline_flush: false)
       Log.debug("Reindex starting on #{file_paths.count} files.")
 
       start_time = Time.now
@@ -158,13 +158,28 @@ module ElasticRubyServer
           content: attrs[:content]
         )
 
+        next unless serializer.valid_ast?
+
+        client.delete_by_query(
+          index: index_name,
+          conflicts: "proceed",
+          body: {
+            "query": {
+              "terms": {
+                "file_path.tree": searchable_file_paths
+              }
+            }
+          }
+        )
+
         serializer.serialize_nodes.each do |serialized_node|
           document = serialized_node.merge(file_path: attrs[:searchable_file_path])
           es_client.queue([{ index: { _index: index_name }}, document])
         end
       end
 
-      es_client.flush(refresh_index: index_name)
+      thread = es_client.flush(refresh_index: index_name)
+      thread.join if thread && inline_flush
 
       Log.debug("Finished reindexing #{file_paths.count} files in: #{Time.now - start_time} seconds.")
     end

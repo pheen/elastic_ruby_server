@@ -14,6 +14,10 @@ module ElasticRubyServer
       @ast = nil
     end
 
+    def valid_ast?
+      !@ast.nil?
+    end
+
     def serialize_nodes(ast = @ast, scope = [], serialized = [], root: true)
       return [] unless ast.respond_to?(:children)
 

@@ -11,6 +11,11 @@ module ElasticRubyServer
         documentSymbolProvider: false,
         codeActionProvider: false,
         renameProvider: false,
+        completionProvider: {
+          triggerCharacters: ['.', '::'],
+          resolveProvider: false
+        }
+        # documentRangeFormattingProvider: true,
         # signatureHelpProvider: {
         #   triggerCharacters: ['(', ',']
         # },
@@ -111,8 +116,13 @@ module ElasticRubyServer
         result: result
       })
 
-      Log.debug("Sending response:")
-      Log.debug(response)
+      # Log.debug("Sending response:")
+
+      # if json.bytesize < 1000
+      #   Log.debug(response)
+      # else
+      #   Log.debug("Large json blob response")
+      # end
 
       @conn.write("Content-Length: #{response.length}\r\n")
       @conn.write("\r\n")

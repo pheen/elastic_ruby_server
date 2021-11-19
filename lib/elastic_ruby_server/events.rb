@@ -8,6 +8,7 @@ module ElasticRubyServer
       @local_synchronization = Concurrent::FixedThreadPool.new(3)
       @buffer_synchronization = Concurrent::FixedThreadPool.new(1)
       @open_files_buffer = {}
+      @last_valid_buffer = {}
     end
 
     def on_initialize(params) # params: {"processId"=>54359, "clientInfo"=>{"name"=>"Visual Studio Code", "version"=>"1.56.2"}, "locale"=>"en-us", "rootPath"=>"/Users/joelkorpela/clio/themis/test", "rootUri"=>"file:///Users/joelkorpela/clio/themis/test", "capabilities"=>{"workspace"=>{"applyEdit"=>true, "workspaceEdit"=>{"documentChanges"=>true, "resourceOperations"=>["create", "rename", "delete"], "failureHandling"=>"textOnlyTransactional", "normalizesLineEndings"=>true, "changeAnnotationSupport"=>{"groupsOnLabel"=>true}}, "didChangeConfiguration"=>{"dynamicRegistration"=>true}, "didChangeWatchedFiles"=>{"dynamicRegistration"=>true}, "symbol"=>{"dynamicRegistration"=>true, "symbolKind"=>{"valueSet"=>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]}, "tagSupport"=>{"valueSet"=>[1]}}, "codeLens"=>{"refreshSupport"=>true}, "executeCommand"=>{"dynamicRegistration"=>true}, "configuration"=>true, "workspaceFolders"=>true, "semanticTokens"=>{"refreshSupport"=>true}, "fileOperations"=>{"dynamicRegistration"=>true, "didCreate"=>true, "didRename"=>true, "didDelete"=>true, "willCreate"=>true, "willRename"=>true, "willDelete"=>true}}, "textDocument"=>{"publishDiagnostics"=>{"relatedInformation"=>true, "versionSupport"=>false, "tagSupport"=>{"valueSet"=>[1, 2]}, "codeDescriptionSupport"=>true, "dataSupport"=>true}, "synchronization"=>{"dynamicRegistration"=>true, "willSave"=>true, "willSaveWaitUntil"=>true, "didSave"=>true}, "completion"=>{"dynamicRegistration"=>true, "contextSupport"=>true, "completionItem"=>{"snippetSupport"=>true, "commitCharactersSupport"=>true, "documentationFormat"=>["markdown", "plaintext"], "deprecatedSupport"=>true, "preselectSupport"=>true, "tagSupport"=>{"valueSet"=>[1]}, "insertReplaceSupport"=>true, "resolveSupport"=>{"properties"=>["documentation", "detail", "additionalTextEdits"]}, "insertTextModeSupport"=>{"valueSet"=>[1, 2]}}, "completionItemKind"=>{"valueSet"=>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]}}, "hover"=>{"dynamicRegistration"=>true, "contentFormat"=>["markdown", "plaintext"]}, "signatureHelp"=>{"dynamicRegistration"=>true, "signatureInformation"=>{"documentationFormat"=>["markdown", "plaintext"], "parameterInformation"=>{"labelOffsetSupport"=>true}, "activeParameterSupport"=>true}, "contextSupport"=>true}, "definition"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "references"=>{"dynamicRegistration"=>true}, "documentHighlight"=>{"dynamicRegistration"=>true}, "documentSymbol"=>{"dynamicRegistration"=>true, "symbolKind"=>{"valueSet"=>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]}, "hierarchicalDocumentSymbolSupport"=>true, "tagSupport"=>{"valueSet"=>[1]}, "labelSupport"=>true}, "codeAction"=>{"dynamicRegistration"=>true, "isPreferredSupport"=>true, "disabledSupport"=>true, "dataSupport"=>true, "resolveSupport"=>{"properties"=>["edit"]}, "codeActionLiteralSupport"=>{"codeActionKind"=>{"valueSet"=>["", "quickfix", "refactor", "refactor.extract", "refactor.inline", "refactor.rewrite", "source", "source.organizeImports"]}}, "honorsChangeAnnotations"=>false}, "codeLens"=>{"dynamicRegistration"=>true}, "formatting"=>{"dynamicRegistration"=>true}, "rangeFormatting"=>{"dynamicRegistration"=>true}, "onTypeFormatting"=>{"dynamicRegistration"=>true}, "rename"=>{"dynamicRegistration"=>true, "prepareSupport"=>true, "prepareSupportDefaultBehavior"=>1, "honorsChangeAnnotations"=>true}, "documentLink"=>{"dynamicRegistration"=>true, "tooltipSupport"=>true}, "typeDefinition"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "implementation"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "colorProvider"=>{"dynamicRegistration"=>true}, "foldingRange"=>{"dynamicRegistration"=>true, "rangeLimit"=>5000, "lineFoldingOnly"=>true}, "declaration"=>{"dynamicRegistration"=>true, "linkSupport"=>true}, "selectionRange"=>{"dynamicRegistration"=>true}, "callHierarchy"=>{"dynamicRegistration"=>true}, "semanticTokens"=>{"dynamicRegistration"=>true, "tokenTypes"=>["namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword", "modifier", "comment", "string", "number", "regexp", "operator"], "tokenModifiers"=>["declaration", "definition", "readonly", "static", "deprecated", "abstract", "async", "modification", "documentation", "defaultLibrary"], "formats"=>["relative"], "requests"=>{"range"=>true, "full"=>{"delta"=>true}}, "multilineTokenSupport"=>false, "overlappingTokenSupport"=>false}, "linkedEditingRange"=>{"dynamicRegistration"=>true}}, "window"=>{"showMessage"=>{"messageActionItem"=>{"additionalPropertiesSupport"=>true}}, "showDocument"=>{"support"=>true}, "workDoneProgress"=>true}, "general"=>{"regularExpressions"=>{"engine"=>"ECMAScript", "version"=>"ES2020"}, "markdown"=>{"parser"=>"marked", "version"=>"1.1.0"}}}, "trace"=>"off", "workspaceFolders"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/test", "name"=>"test"}]}
@@ -84,13 +85,32 @@ module ElasticRubyServer
         file_buffer = @open_files_buffer[file_path]
         changes = params["contentChanges"]
 
-        file_buffer.change!(changes)
+        content = file_buffer.change(changes)
+
+        path = file_path.start_with?(@host_workspace_path) ? file_path.sub(@host_workspace_path, "") : file_path
+        searchable_file_path = path.sub(@host_workspace_path, "")
+        readable_file_path = "#{@container_workspace_path}#{searchable_file_path}",
+
+        serializer = Serializer.new(
+          file_path: readable_file_path,
+          content: content
+        )
+
+        if serializer.valid_ast?
+          @last_valid_buffer[file_path] = file_buffer.dup
+          file_buffer.change!(changes)
+        end
 
         if @buffer_synchronization.queue_length == 0
-          sleep(SLEEP_TIME)
+          sleep(SLEEP_TIME) unless changes.first["text"] == "."
 
           if @buffer_synchronization.queue_length == 0
-            @persistence.reindex(file_path, content: { file_path => file_buffer.text })
+            if @last_valid_buffer[file_path].text == file_buffer.text
+              @persistence.reindex(file_path, content: { file_path => file_buffer.text }, inline_flush: true)
+            elsif @last_valid_buffer[file_path]
+              @persistence.reindex(file_path, content: { file_path => @last_valid_buffer[file_path].text }, inline_flush: true)
+            else
+            end
           end
         end
       rescue => e
@@ -123,11 +143,43 @@ module ElasticRubyServer
       uri = params["textDocument"]["uri"]
       file_path = strip_protocol(uri)
 
-      @search.find_definitions(file_path, params["position"])
+      assignments = @search.find_definitions(file_path, params["position"])
+
+      assignments.map do |doc|
+        SymbolLocation.build(
+          source: doc["_source"],
+          workspace_path: @host_workspace_path
+        )
+      end
     end
 
     def on_workspace_symbol(params) # {"query"=>"abc"}
       @search.find_symbols(params["query"])
+    end
+
+    def on_textDocument_completion(params) # {"textDocument":{"uri":"file:///Users/joelkorpela/dev/elastic_ruby_server/lib/elastic_ruby_server/events.rb"},"position":{"line":105,"character":7},"context":{"triggerKind":2,"triggerCharacter":"."}}
+      return [] if params["context"]["triggerKind"] != 2
+
+      @buffer_synchronization.shutdown
+      @buffer_synchronization.wait_for_termination(10)
+      @buffer_synchronization = Concurrent::FixedThreadPool.new(1)
+
+      uri = params["textDocument"]["uri"]
+      file_path = strip_protocol(uri)
+
+      position = params["position"]
+      position["character"] -= 1
+
+      definitions = @search.find_definitions(file_path, params["position"])
+      definition = definitions.first
+
+      if definition && definition["_source"]["type"] == "class"
+        klass = definition["_source"]["name"]
+      else
+        return nil
+      end
+
+      @search.find_method_definitions(klass)
     end
 
     private

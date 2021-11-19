@@ -105,17 +105,44 @@ module ElasticRubyServer
 
       return [] unless usages.any?
 
-      usage = usages.first
-      assignments = query_assignment(file_path, usage)
+      query_assignment(file_path, usages.first)
+    end
 
-      Log.debug("Assignments:")
-      Log.debug(assignments)
+    def find_method_definitions(klass)
+      body = {
+        "size": 25,
+        "query": {
+          "bool": {
+            "must": [
+              { "match": { "category": "assignment" } },
+              { "terms": { "type": ["def"] } },
+              { "match": { "scope": klass } }
+              # { "match": { "scope": "Arguments" } }
+            ],
+            # "should": [
+            #   { "wildcard": { "file_path.tree": "*#{query}*" } },
+            #   { "wildcard": { "file_path.tree_reversed": "*#{query}*" } }
+            # ],
+            # "minimum_should_match": 1
+          }
+        }
+      }
 
-      assignments.map do |doc|
-        SymbolLocation.build(
-          source: doc["_source"],
-          workspace_path: host_workspace_path
-        )
+      response = client.search(
+        index: index_name,
+        body: body
+      )
+
+      Log.debug("method definition hits:")
+      Log.debug(response["hits"]["hits"])
+
+      response["hits"]["hits"].map do |doc|
+        source = doc["_source"]
+
+        {
+          label: source["name"],
+          kind: lookup_vscode_type(source["type"])
+        }
       end
     end
 
