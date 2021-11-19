@@ -2,10 +2,12 @@
 module ElasticRubyServer
   class Serializer
     def initialize(file_path: nil, content: nil)
-      contents = content
-      contents ||= ::IO.binread(file_path)
+      path = Utils.readable_file_path(file_path)
 
-      # binding.pry if file_path.include?("rails.rb")
+      contents = content
+      contents ||= ::IO.binread(path)
+
+      # binding.pry if file_path.include?("inferred_class.rb")
 
       @ast = Parser::Ruby26.parse(contents)
     rescue Parser::SyntaxError, Errno::ENOENT => e

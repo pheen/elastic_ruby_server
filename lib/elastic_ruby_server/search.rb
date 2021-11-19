@@ -48,12 +48,9 @@ module ElasticRubyServer
     SymbolTypesForLookup = ["module", "class", "casgn", "defs", "def", "send"].freeze
     RestrictQuerySize = { "lvar" => 5 }.freeze
 
-    def initialize(host_workspace_path, index_name)
-      @host_workspace_path = host_workspace_path
-      @index_name = index_name
+    def initialize(project)
+      @project = project
     end
-
-    attr_reader :index_name, :host_workspace_path
 
     def find_symbols(query)
       body = {
@@ -77,7 +74,7 @@ module ElasticRubyServer
       }
 
       response = client.search(
-        index: index_name,
+        index: @project.index_name,
         body: body
       )
 
@@ -90,14 +87,14 @@ module ElasticRubyServer
           containerName: source["scope"].last,
           location: SymbolLocation.build(
             source: source,
-            workspace_path: host_workspace_path
+            workspace_path: @project.host_workspace_path
           )
         }
       end
     end
 
     def find_definitions(host_file_path, position)
-      file_path = host_file_path.sub(host_workspace_path, "")
+      file_path = Utils.searchable_path(host_file_path)
       usages = query_usages(file_path, position)
 
       Log.debug("Usages:")
@@ -129,7 +126,7 @@ module ElasticRubyServer
       }
 
       response = client.search(
-        index: index_name,
+        index: @project.index_name,
         body: body
       )
 
@@ -164,7 +161,7 @@ module ElasticRubyServer
       }
 
       results = client.search(
-        index: index_name,
+        index: @project.index_name,
         body: query
       )
 
@@ -174,7 +171,7 @@ module ElasticRubyServer
     def query_assignment(file_path, usage)
       query = QueryBuilder.assignment_query(file_path, usage)
       results = client.search(
-        index: index_name,
+        index: @project.index_name,
         body: query,
         size: RestrictQuerySize.fetch(usage.dig("_source", "type"), 100)
       )

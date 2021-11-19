@@ -122,12 +122,13 @@ module ElasticRubyServer
       es_client.flush(refresh_index: index_name)
     end
 
-    def reindex(*file_paths, content: {}, inline_flush: false)
+    def reindex(*file_paths, content: {}, wait: true)
       Log.debug("Reindex starting on #{file_paths.count} files.")
 
       start_time = Time.now
 
       path_attrs = file_paths.map do |path|
+        file_path = Utils.strip_protocol(path)
         file_path = path.start_with?(@host_workspace_path) ? path.sub(@host_workspace_path, "") : path
         searchable_file_path = file_path.sub(@host_workspace_path, "")
 
@@ -137,20 +138,6 @@ module ElasticRubyServer
           content: content[path]
         }
       end
-
-      searchable_file_paths = path_attrs.map { |path| path[:searchable_file_path] }
-
-      client.delete_by_query(
-        index: index_name,
-        conflicts: "proceed",
-        body: {
-          "query": {
-            "terms": {
-              "file_path.tree": searchable_file_paths
-            }
-          }
-        }
-      )
 
       path_attrs.each do |attrs|
         serializer = Serializer.new(
@@ -166,7 +153,7 @@ module ElasticRubyServer
           body: {
             "query": {
               "terms": {
-                "file_path.tree": searchable_file_paths
+                "file_path.tree": path_attrs.map { |path| path[:searchable_file_path] }
               }
             }
           }
@@ -179,7 +166,7 @@ module ElasticRubyServer
       end
 
       thread = es_client.flush(refresh_index: index_name)
-      thread.join if thread && inline_flush
+      thread.join if thread && wait
 
       Log.debug("Finished reindexing #{file_paths.count} files in: #{Time.now - start_time} seconds.")
     end

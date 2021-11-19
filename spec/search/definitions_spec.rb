@@ -16,7 +16,13 @@ module ElasticRubyServer
       result = subject.find_definitions(file_path, position).first
 
       result or raise "No definition found"
-      result[:range]
+
+      location = SymbolLocation.build(
+        source: result["_source"],
+        workspace_path: "/examples/"
+      )
+
+      location[:range]
     end
 
     describe "nested constant names" do
