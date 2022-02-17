@@ -108,13 +108,8 @@ module ElasticRubyServer
       Log.info("container_workspace_path: #{@container_workspace_path}")
 
       FilePaths.new(@container_workspace_path).find_each do |file_path|
-        Log.info("file_path: #{@file_path}")
-
         searchable_file_path = Utils.searchable_path(@project, file_path)
-        readable_file_path = Utils.readable_path(@project, file_path),
-
-        Log.info("searchable_file_path: #{searchable_file_path}")
-
+        readable_file_path = Utils.readable_path(@project, file_path)
         serializer = Serializer.new(@project, file_path: readable_file_path)
 
         serializer.serialize_nodes.each do |hash|
