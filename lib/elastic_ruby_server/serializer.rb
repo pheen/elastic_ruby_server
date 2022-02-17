@@ -2,17 +2,15 @@
 module ElasticRubyServer
   class Serializer
     def initialize(project, file_path: nil, content: nil)
-      path = Utils.readable_path(project, file_path)
-
       contents = content
-      contents ||= ::IO.binread(path)
+      contents ||= ::IO.binread(file_path)
 
       # binding.pry if file_path.include?("inferred_class.rb")
 
       @ast = Parser::Ruby26.parse(contents)
     rescue Parser::SyntaxError, Errno::ENOENT => e
       # All good, the file was probably deleted.
-      # Log.info("Failed to read file path: #{file_path}")
+      Log.info("Failed to read file path: #{file_path}")
       @ast = nil
     end
 

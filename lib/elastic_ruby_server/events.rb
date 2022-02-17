@@ -46,7 +46,7 @@ module ElasticRubyServer
 
     def on_workspace_didChangeWatchedFiles(params) # {"changes"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/extensions/rack_session_id.rb", "type"=>3}, {"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/app/services/foundations/lock.rb", "type"=>3}, ...
       queue_task(worker: @global_synchronization) do
-        file_uris = params["changes"].map { |change| Utils.strip_protocol(change["uri"]) }
+        file_uris = params["changes"].map { |change| change["uri"] }
         @persistence.reindex(*file_uris, wait: false)
       end
     end
@@ -128,7 +128,7 @@ module ElasticRubyServer
       @search.find_definitions(file_uri, cursor).map do |doc|
         SymbolLocation.build(
           source: doc["_source"],
-          workspace_path: @host_workspace_path
+          workspace_path: @project.host_workspace_path
         )
       end
     end

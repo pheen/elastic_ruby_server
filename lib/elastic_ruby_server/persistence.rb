@@ -105,9 +105,17 @@ module ElasticRubyServer
       delete_index
       create_index
 
+      Log.info("container_workspace_path: #{@container_workspace_path}")
+
       FilePaths.new(@container_workspace_path).find_each do |file_path|
-        searchable_file_path = file_path.sub(@container_workspace_path, "")
-        serializer = Serializer.new(@project, file_path: file_path)
+        Log.info("file_path: #{@file_path}")
+
+        searchable_file_path = Utils.searchable_path(@project, file_path)
+        readable_file_path = Utils.readable_path(@project, file_path),
+
+        Log.info("searchable_file_path: #{searchable_file_path}")
+
+        serializer = Serializer.new(@project, file_path: readable_file_path)
 
         serializer.serialize_nodes.each do |hash|
           document = hash.merge(file_path: searchable_file_path)
@@ -129,13 +137,9 @@ module ElasticRubyServer
       start_time = Time.now
 
       path_attrs = file_paths.map do |path|
-        file_path = Utils.strip_protocol(path)
-        file_path = path.start_with?(@host_workspace_path) ? path.sub(@host_workspace_path, "") : path
-        searchable_file_path = file_path.sub(@host_workspace_path, "")
-
         {
-          searchable_file_path: searchable_file_path,
-          readable_file_path: "#{@container_workspace_path}#{searchable_file_path}",
+          searchable_file_path: Utils.searchable_path(@project, path),
+          readable_file_path: Utils.readable_path(@project, path),
           content: content[path]
         }
       end
