@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 RootPath = "#{File.expand_path(File.dirname(__FILE__))}/examples"
-IndexName = :elastic_ruby_server_test
 
 def pretty_hash_diff(actual, expected)
   known_keys = ["category", "line"]
@@ -27,8 +26,18 @@ def pretty_hash_diff(actual, expected)
   diff.join("\n")
 end
 
+def project
+  ENV["HOST_PROJECT_ROOTS"] ||= RootPath
+  ENV["PROJECTS_ROOT"] ||= RootPath
+
+  @project ||= ElasticRubyServer::Project.new.tap do |instance|
+    instance.container_workspace_path = RootPath
+    instance.host_workspace_path = RootPath
+  end
+end
+
 def persistence
-  @persistence ||= ElasticRubyServer::Persistence.new(RootPath, RootPath, IndexName)
+  @persistence ||= ElasticRubyServer::Persistence.new(project)
 end
 
 def client

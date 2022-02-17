@@ -8,13 +8,13 @@ module ElasticRubyServer
       end
     end
 
-    def self.searchable_path(path)
+    def self.searchable_path(project, path)
       path = strip_protocol(path)
-      path.sub(@project.host_workspace_path, "")
+      path.sub(project.host_workspace_path, "")
     end
 
-    def self.readable_path(path)
-      "#{@project.container_workspace_path}#{searchable_path(path)}",
+    def self.readable_path(project, path)
+      "#{project.container_workspace_path}#{searchable_path(project, path)}"
     end
   end
 end

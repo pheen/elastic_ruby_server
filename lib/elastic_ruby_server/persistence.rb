@@ -63,10 +63,11 @@ module ElasticRubyServer
       }
     }.freeze
 
-    def initialize(host_workspace_path, container_workspace_path, index_name)
-      @host_workspace_path = host_workspace_path
-      @container_workspace_path = container_workspace_path
-      @index_name = index_name
+    def initialize(project)
+      @project = project
+      @host_workspace_path = project.host_workspace_path
+      @container_workspace_path = project.container_workspace_path
+      @index_name = project.index_name
     end
 
     attr_reader :index_name
@@ -106,7 +107,7 @@ module ElasticRubyServer
 
       FilePaths.new(@container_workspace_path).find_each do |file_path|
         searchable_file_path = file_path.sub(@container_workspace_path, "")
-        serializer = Serializer.new(file_path: file_path)
+        serializer = Serializer.new(@project, file_path: file_path)
 
         serializer.serialize_nodes.each do |hash|
           document = hash.merge(file_path: searchable_file_path)
@@ -141,6 +142,7 @@ module ElasticRubyServer
 
       path_attrs.each do |attrs|
         serializer = Serializer.new(
+          @project,
           file_path: attrs[:readable_file_path],
           content: attrs[:content]
         )

@@ -3,9 +3,7 @@ module ElasticRubyServer
   RSpec.describe Search do
     include TestHelpers
 
-    subject do
-      described_class.new("", IndexName)
-    end
+    subject { described_class.new(project) }
 
     describe "basic" do
       let(:file_path) { "/basic.rb" }

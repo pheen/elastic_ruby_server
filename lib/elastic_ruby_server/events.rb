@@ -76,7 +76,7 @@ module ElasticRubyServer
         file_changes = params["contentChanges"]
 
         maybe_invalid_content = file_buffer.change(file_changes)
-        serializer = Serializer.new(file_path: file_uri, content: maybe_invalid_content)
+        serializer = Serializer.new(@project, file_path: file_uri, content: maybe_invalid_content)
 
         if serializer.valid_ast?
           @last_valid_buffer[file_uri] = file_buffer.dup

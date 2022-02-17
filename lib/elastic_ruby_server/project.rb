@@ -5,22 +5,20 @@ module ElasticRubyServer
       @project_root = ENV.fetch("PROJECTS_ROOT")
     end
 
-    attr_accessor :host_workspace_path
+    attr_accessor :host_workspace_path, :container_workspace_path
 
     def name
       # match the last directory in host_project_root
-      @name ||=
-        host_project_root.match(/\/([^\/]*?)(\/$|$)/)[1]
+      @name ||= host_project_root.match(/\/([^\/]*?)(\/$|$)/)[1]
     end
 
-    def elasticsearch_index_name
-      @elasticsearch_index_name ||=
-        Digest::SHA1.hexdigest(host_workspace_path)
+    def index_name
+      # Elasticsearch index name
+      @index_name ||= Digest::SHA1.hexdigest(host_workspace_path)
     end
 
     def container_workspace_path
-      @container_workspace_path ||=
-        host_workspace_path.sub(host_project_root, "#{@project_root}#{project_name}")
+      @container_workspace_path ||= host_workspace_path.sub(host_project_root, "#{@project_root}#{name}")
     end
 
     def host_project_root

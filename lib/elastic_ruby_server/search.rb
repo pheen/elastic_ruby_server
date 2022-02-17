@@ -94,7 +94,7 @@ module ElasticRubyServer
     end
 
     def find_definitions(host_file_path, position)
-      file_path = Utils.searchable_path(host_file_path)
+      file_path = Utils.searchable_path(@project, host_file_path)
       usages = query_usages(file_path, position)
 
       Log.debug("Usages:")

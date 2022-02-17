@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 module ElasticRubyServer
   class Serializer
-    def initialize(file_path: nil, content: nil)
-      path = Utils.readable_file_path(file_path)
+    def initialize(project, file_path: nil, content: nil)
+      path = Utils.readable_path(project, file_path)
 
       contents = content
       contents ||= ::IO.binread(path)
