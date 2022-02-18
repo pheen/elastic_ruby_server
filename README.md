@@ -4,7 +4,8 @@
 
 Supported:
 - [x] [Show Definitions of a Symbol](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-definitions-of-a-symbol)
-- [ ] [Find All References to a Symbol](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#find-all-references-to-a-symbol)
+- [x] [Find All References to a Symbol](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#find-all-references-to-a-symbol)
+  - [ ] Currently limited to a single file. Expand to allow cross-file reference lookup.
 - [ ] [Highlight All Occurrences of a Symbol in a Document](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#highlight-all-occurrences-of-a-symbol-in-a-document)
 - [ ] [Show all Symbol Definitions Within a Document](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-all-symbol-definitions-within-a-document)
 - [x] [Show all Symbol Definitions in Folder](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-all-symbol-definitions-in-folder)
