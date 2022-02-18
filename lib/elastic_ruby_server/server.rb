@@ -3,31 +3,20 @@ module ElasticRubyServer
   class Server
     Capabilities = {
       capabilities: {
+        # Implemented:
         definitionProvider: true,
-        workspaceSymbolProvider: true,
-        referencesProvider: false, # todo: implement
         textDocumentSync: 2,
-        hoverProvider: false,
-        documentSymbolProvider: false,
+        workspaceSymbolProvider: true,
+
+        referencesProvider: true,
+        # Not implemented:
         codeActionProvider: false,
-        renameProvider: false,
         completionProvider: {
           triggerCharacters: ['.', '::'],
           resolveProvider: false
-        }
-        # documentRangeFormattingProvider: true,
-        # signatureHelpProvider: {
-        #   triggerCharacters: ['(', ',']
-        # },
-        # workspaceReferencesProvider: true,
-        # completionProvider: {
-        #   resolveProvider: true,
-        #   triggerCharacters: ['.', '::']
-        # },
-        # executeCommandProvider: {
-        #   commands: []
-        # },
-        # xpackagesProvider: true
+        },
+        documentSymbolProvider: false,
+        renameProvider: false,
       }
     }.freeze
 

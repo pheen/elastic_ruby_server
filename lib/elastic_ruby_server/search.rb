@@ -105,6 +105,73 @@ module ElasticRubyServer
       query_assignment(file_path, usages.first)
     end
 
+    def find_references(host_file_path, position)
+      file_path = Utils.searchable_path(@project, host_file_path)
+
+      results = query_position(file_path, position)
+      result = results.first # todo: something
+
+      return [] unless result
+
+      query_references(file_path, result)
+    end
+
+    def query_position(file_path, position)
+      line = position["line"].to_i + 1
+      character = position["character"].to_i + 1
+
+      query = {
+        "query": {
+          "bool": {
+            "must": [
+              { "match": { "line": line }},
+              { "term": { "columns": { "value": character }}},
+              { "term": { "file_path.tree": file_path } }
+            ]
+          }
+        }
+      }
+
+      results = client.search(
+        index: @project.index_name,
+        body: query
+      )
+
+      results["hits"]["hits"]
+    end
+
+    def query_references(file_path, document)
+      source = document["_source"]
+
+      type =
+        if source["category"] == "assignment"
+          mapping = QueryBuilder::TypeRestrictionMap.find { |k, v| v.include?(source["type"]) }
+          mapping[0] # the usage type
+        else
+          source["type"]
+        end
+
+      query = {
+        "query": {
+          "bool": {
+            "must": [
+              { "match": { "category": "usage" } },
+              { "match": { "name": source["name"] } },
+              { "match": { "type": type } },
+              { "term": { "file_path.tree": file_path } }
+            ]
+          }
+        }
+      }
+
+      results = client.search(
+        index: @project.index_name,
+        body: query
+      )
+
+      results["hits"]["hits"]
+    end
+
     def find_method_definitions(klass)
       body = {
         "size": 25,
