@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    elastic_ruby_server (0.5.0)
+    elastic_ruby_server (0.5.3)
       concurrent-ruby
       elasticsearch (< 7.14)
       git
