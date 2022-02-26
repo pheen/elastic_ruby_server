@@ -8,7 +8,7 @@ module ElasticRubyServer
         documentHighlightProvider: true,
         textDocumentSync: 2,
         workspaceSymbolProvider: true,
-
+        documentSymbolProvider: true,
         referencesProvider: true,
         # Not implemented:
         codeActionProvider: false,
@@ -16,7 +16,6 @@ module ElasticRubyServer
           triggerCharacters: ['.', '::'],
           resolveProvider: false
         },
-        documentSymbolProvider: false,
         renameProvider: false,
       }
     }.freeze

@@ -93,6 +93,41 @@ module ElasticRubyServer
       end
     end
 
+    def find_symbols_for_file(host_file_path)
+      file_path = Utils.searchable_path(@project, host_file_path)
+
+      body = {
+        "size": 10_000,
+        "query": {
+          "bool": {
+            "must": [
+              { "term": { "file_path.tree": file_path } },
+              { "match": { "category": "assignment" } }
+            ]
+          }
+        }
+      }
+
+      response = client.search(
+        index: @project.index_name,
+        body: body
+      )
+
+      response["hits"]["hits"].map do |doc|
+        source = doc["_source"]
+
+        {
+          name: source["name"],
+          kind: lookup_vscode_type(source["type"]),
+          containerName: source["scope"].last,
+          location: SymbolLocation.build(
+            source: source,
+            workspace_path: @project.host_workspace_path
+          )
+        }
+      end
+    end
+
     def find_definitions(host_file_path, position)
       file_path = Utils.searchable_path(@project, host_file_path)
       usages = query_usages(file_path, position)

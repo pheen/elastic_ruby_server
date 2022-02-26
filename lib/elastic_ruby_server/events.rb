@@ -163,6 +163,13 @@ module ElasticRubyServer
       end
     end
 
+    def on_textDocument_documentSymbol(params)
+      Log.info("Params:")
+      Log.info(params)
+
+      @search.find_symbols_for_file(params.dig("textDocument", "uri"))
+    end
+
     def on_workspace_symbol(params) # {"query"=>"abc"}
       @search.find_symbols(params["query"])
     end
