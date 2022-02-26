@@ -5,6 +5,7 @@ module ElasticRubyServer
       capabilities: {
         # Implemented:
         definitionProvider: true,
+        documentHighlightProvider: true,
         textDocumentSync: 2,
         workspaceSymbolProvider: true,
 

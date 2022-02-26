@@ -133,6 +133,21 @@ module ElasticRubyServer
       end
     end
 
+    def on_textDocument_documentHighlight(params)
+      Log.info("Params:")
+      Log.info(params)
+
+      file_uri = params.dig("textDocument", "uri")
+      cursor = params["position"]
+
+      @search.find_references(file_uri, cursor).map do |doc|
+        SymbolLocation.build(
+          source: doc["_source"],
+          workspace_path: @project.host_workspace_path
+        )
+      end
+    end
+
     def on_textDocument_references(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>36, "character"=>8}, "context"=>{"includeDeclaration"=>true}}
       Log.info("Params:")
       Log.info(params)
