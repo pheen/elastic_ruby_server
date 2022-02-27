@@ -75,24 +75,24 @@ module ElasticRubyServer
         file_buffer = @open_files_buffer[file_uri]
         file_changes = params["contentChanges"]
 
-        maybe_invalid_content = file_buffer.change(file_changes)
+        maybe_invalid_content = file_buffer.change!(file_changes)
         serializer = Serializer.new(@project, file_path: file_uri, content: maybe_invalid_content)
 
         if serializer.valid_ast?
           @last_valid_buffer[file_uri] = file_buffer.dup
-          file_buffer.change!(file_changes)
+          # file_buffer.change!(file_changes)
         end
 
         if @buffer_synchronization.queue_length == 0
           sleep(0.33) unless file_changes.first["text"] == "."
 
           if @buffer_synchronization.queue_length == 0
-            if @last_valid_buffer[file_uri].text == file_buffer.text
-              @persistence.reindex(file_uri, content: { file_uri => file_buffer.text })
-            elsif @last_valid_buffer[file_uri]
+            # if @last_valid_buffer[file_uri].text == file_buffer.text
+              # @persistence.reindex(file_uri, content: { file_uri => file_buffer.text })
+            # elsif @last_valid_buffer[file_uri]
               @persistence.reindex(file_uri, content: { file_uri => @last_valid_buffer[file_uri].text })
-            else
-            end
+            # else
+            # end
           end
         end
       end
@@ -134,9 +134,6 @@ module ElasticRubyServer
     end
 
     def on_textDocument_documentHighlight(params)
-      Log.info("Params:")
-      Log.info(params)
-
       file_uri = params.dig("textDocument", "uri")
       cursor = params["position"]
 
@@ -149,9 +146,6 @@ module ElasticRubyServer
     end
 
     def on_textDocument_references(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>36, "character"=>8}, "context"=>{"includeDeclaration"=>true}}
-      Log.info("Params:")
-      Log.info(params)
-
       file_uri = params.dig("textDocument", "uri")
       cursor = params["position"]
 
@@ -164,10 +158,38 @@ module ElasticRubyServer
     end
 
     def on_textDocument_documentSymbol(params)
-      Log.info("Params:")
-      Log.info(params)
-
       @search.find_symbols_for_file(params.dig("textDocument", "uri"))
+    end
+
+    # def on_textDocument_formatting(params)
+    #   Log.info("Params:")
+    #   Log.info(params)
+
+    #   # @search.find_symbols_for_file(params.dig("textDocument", "uri"))
+    #   nil
+    # end
+
+    def on_textDocument_rangeFormatting(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/components/manage/app/models/manage/user.rb"}, "range"=>{"start"=>{"line"=>581, "character"=>0}, "end"=>{"line"=>582, "character"=>38}}, "options"=>{"tabSize"=>2, "insertSpaces"=>true, "trimTrailingWhitespace"=>true}}
+      # queue_task(worker: @buffer_synchronization) do
+        Log.info("Params:")
+        Log.info(params)
+
+        # @search.find_symbols_for_file(params.dig("textDocument", "uri"))
+        # nil
+
+        @buffer_synchronization.shutdown
+        @buffer_synchronization.wait_for_termination(10)
+        @buffer_synchronization = Concurrent::FixedThreadPool.new(1)
+
+        file_uri = params.dig("textDocument", "uri")
+        file_buffer = @open_files_buffer[file_uri]
+
+        formatted_range = file_buffer.format_range(params["range"])
+
+        if formatted_range
+          [{ range: params["range"], newText: formatted_range }]
+        end
+      # end
     end
 
     def on_workspace_symbol(params) # {"query"=>"abc"}

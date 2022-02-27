@@ -9,6 +9,7 @@ module ElasticRubyServer
         textDocumentSync: 2,
         workspaceSymbolProvider: true,
         documentSymbolProvider: true,
+        documentRangeFormattingProvider: true,
         referencesProvider: true,
         # Not implemented:
         codeActionProvider: false,

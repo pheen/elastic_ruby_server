@@ -7,6 +7,7 @@ PATH
       git
       parser
       patron
+      rufo
 
 GEM
   remote: https://rubygems.org/
@@ -78,6 +79,7 @@ GEM
     rspec-support (3.10.2)
     ruby-progressbar (1.11.0)
     ruby2_keywords (0.0.5)
+    rufo (0.13.0)
 
 PLATFORMS
   x86_64-darwin-19

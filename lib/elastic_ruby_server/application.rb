@@ -4,6 +4,7 @@ require "patron"
 require "parser/ruby26"
 require "concurrent-ruby"
 require "git"
+require "rufo"
 
 require "find"
 require "json"
