@@ -6,18 +6,18 @@ module ElasticRubyServer
         # Implemented:
         definitionProvider: true,
         documentHighlightProvider: true,
+        documentRangeFormattingProvider: true,
+        documentSymbolProvider: true,
+        referencesProvider: true,
+        renameProvider: true,
         textDocumentSync: 2,
         workspaceSymbolProvider: true,
-        documentSymbolProvider: true,
-        documentRangeFormattingProvider: true,
-        referencesProvider: true,
         # Not implemented:
         codeActionProvider: false,
         completionProvider: {
           triggerCharacters: ['.', '::'],
           resolveProvider: false
         },
-        renameProvider: false,
       }
     }.freeze
 

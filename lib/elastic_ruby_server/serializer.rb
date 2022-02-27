@@ -25,8 +25,7 @@ module ElasticRubyServer
 
       if root
         unless node.is_a?(NodeTypes::NodeMissing)
-          serialized_node = serialize(scope, node)
-          serialized << serialized_node if serialized_node
+          serialized.concat(serialize(scope, node))
         end
 
         scope += node.scope_names.compact
@@ -37,8 +36,7 @@ module ElasticRubyServer
         child_node = NodeTypes.build_node(child_ast)
 
         unless child_node.is_a?(NodeTypes::NodeMissing)
-          serialized_node = serialize(scope, child_node)
-          serialized << serialized_node if serialized_node
+          serialized.concat(serialize(scope, child_node))
         end
 
         scope += child_node.scope_names.compact
@@ -53,7 +51,11 @@ module ElasticRubyServer
     private
 
     def serialize(scope, node)
-      Document.build(scope, node)
+      serialized_nodes = []
+      serialized_nodes << Document.build(scope, node)
+      serialized_nodes << Document.build_assignment_reference(scope, node)
+
+      serialized_nodes.compact
     end
 
     def scope_diff(scope, starting_scope)

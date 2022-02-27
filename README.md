@@ -9,9 +9,9 @@ Supported:
 - [x] [Highlight All Occurrences of a Symbol in a Document](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#highlight-all-occurrences-of-a-symbol-in-a-document)
 - [x] [Show all Symbol Definitions Within a Document](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-all-symbol-definitions-within-a-document)
 - [x] [Show all Symbol Definitions in Folder](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-all-symbol-definitions-in-folder)
-- [ ] [Format Source Code in an Editor](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#format-source-code-in-an-editor)
-- [ ] [Format the Selected Lines in an Editor](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#format-the-selected-lines-in-an-editor)
-- [ ] [Rename Symbols](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#rename-symbols)
+- [x] [Format Source Code in an Editor](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#format-source-code-in-an-editor)
+- [x] [Format the Selected Lines in an Editor](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#format-the-selected-lines-in-an-editor)
+- [x] [Rename Symbols](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#rename-symbols)
 
 Unsupported:
 - [ ] [Provide Diagnostics](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#provide-diagnostics)

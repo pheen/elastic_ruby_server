@@ -63,6 +63,7 @@ module ElasticRubyServer
       hash_pattern = /##{hash}\n(?<formatted_range>.*)\n *##{hash}/m
       formatted_range = formatted_contents.match(hash_pattern)[:formatted_range].sub(/ *\Z/, "")
 
+      # todo: send nothing if no change was made
       # todo: do a diff against the original code to try to send pieces instead of the whole range
       formatted_range
     rescue Rufo::SyntaxError

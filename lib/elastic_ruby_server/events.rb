@@ -90,8 +90,9 @@ module ElasticRubyServer
             # if @last_valid_buffer[file_uri].text == file_buffer.text
               # @persistence.reindex(file_uri, content: { file_uri => file_buffer.text })
             # elsif @last_valid_buffer[file_uri]
+            if @last_valid_buffer[file_uri]
               @persistence.reindex(file_uri, content: { file_uri => @last_valid_buffer[file_uri].text })
-            # else
+            end
             # end
           end
         end
@@ -161,35 +162,58 @@ module ElasticRubyServer
       @search.find_symbols_for_file(params.dig("textDocument", "uri"))
     end
 
-    # def on_textDocument_formatting(params)
-    #   Log.info("Params:")
-    #   Log.info(params)
-
-    #   # @search.find_symbols_for_file(params.dig("textDocument", "uri"))
-    #   nil
-    # end
-
     def on_textDocument_rangeFormatting(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/components/manage/app/models/manage/user.rb"}, "range"=>{"start"=>{"line"=>581, "character"=>0}, "end"=>{"line"=>582, "character"=>38}}, "options"=>{"tabSize"=>2, "insertSpaces"=>true, "trimTrailingWhitespace"=>true}}
-      # queue_task(worker: @buffer_synchronization) do
-        Log.info("Params:")
-        Log.info(params)
+      @buffer_synchronization.shutdown
+      @buffer_synchronization.wait_for_termination(10)
+      @buffer_synchronization = Concurrent::FixedThreadPool.new(1)
 
-        # @search.find_symbols_for_file(params.dig("textDocument", "uri"))
-        # nil
+      file_uri = params.dig("textDocument", "uri")
+      file_buffer = @open_files_buffer[file_uri]
 
-        @buffer_synchronization.shutdown
-        @buffer_synchronization.wait_for_termination(10)
-        @buffer_synchronization = Concurrent::FixedThreadPool.new(1)
+      formatted_range = file_buffer.format_range(params["range"])
 
-        file_uri = params.dig("textDocument", "uri")
-        file_buffer = @open_files_buffer[file_uri]
+      if formatted_range
+        [{ range: params["range"], newText: formatted_range }]
+      end
+    end
 
-        formatted_range = file_buffer.format_range(params["range"])
+    def on_textDocument_rename(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/components/manage/app/models/manage/user_goal.rb"}, "position"=>{"line"=>55, "character"=>9}, "newName"=>"goal_mask2"}
+      file_uri = params.dig("textDocument", "uri")
+      cursor = params["position"]
 
-        if formatted_range
-          [{ range: params["range"], newText: formatted_range }]
+      references = @search.find_references(file_uri, cursor).map do |doc|
+        SymbolLocation.build(
+          source: doc["_source"],
+          workspace_path: @project.host_workspace_path
+        ).merge(
+          type: doc["_source"]["type"]
+        )
+      end
+
+      references_by_uri = references.group_by { |reference| reference[:uri] }
+      references_by_uri = references_by_uri.map do |uri, edits|
+        edits.map! do |edit|
+          edit.delete(:uri)
+
+          type = edit.delete(:type)
+          edit[:newText] = params["newName"]
+
+          case type
+          when "cvar"
+            edit[:newText] = "@@#{edit[:newText]}"
+          when "ivar"
+            edit[:newText] = "@#{edit[:newText]}"
+          when "sym"
+            edit[:newText] = ":#{edit[:newText]}"
+          end
+
+          edit
         end
-      # end
+
+        [uri, edits]
+      end.to_h
+
+      { changes: references_by_uri }
     end
 
     def on_workspace_symbol(params) # {"query"=>"abc"}
