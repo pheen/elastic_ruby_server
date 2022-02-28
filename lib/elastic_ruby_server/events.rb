@@ -272,7 +272,7 @@ module ElasticRubyServer
       when "warning"    then VSCodeDiagnosticSeverity[:warning]
       when "error"      then VSCodeDiagnosticSeverity[:error]
       when "fatal"      then VSCodeDiagnosticSeverity[:error]
-      else VSCodeDiagnosticSeverity[:error]
+      else                   VSCodeDiagnosticSeverity[:error]
       end
     end
 
