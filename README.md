@@ -12,10 +12,10 @@ Supported:
 - [x] [Format Source Code in an Editor](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#format-source-code-in-an-editor)
 - [x] [Format the Selected Lines in an Editor](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#format-the-selected-lines-in-an-editor)
 - [x] [Rename Symbols](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#rename-symbols)
+- [x] [Provide Diagnostics](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#provide-diagnostics)
+- [ ] [Show Code Completion Proposals](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-code-completion-proposals)
 
 Unsupported:
-- [ ] [Provide Diagnostics](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#provide-diagnostics)
-- [ ] [Show Code Completion Proposals](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-code-completion-proposals)
 - [ ] [Show Hovers](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-hovers)
 - [ ] [Help With Function and Method Signatures](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#help-with-function-and-method-signatures)
 - [ ] [Possible Actions on Errors or Warnings](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#possible-actions-on-errors-or-warnings)

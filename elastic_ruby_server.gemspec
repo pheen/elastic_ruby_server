@@ -25,6 +25,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "git"
   spec.add_dependency "concurrent-ruby"
   spec.add_dependency "rufo"
+  spec.add_dependency "rubocop"
+  spec.add_dependency "rubocop-rails"
 
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "fuubar"

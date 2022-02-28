@@ -1,7 +1,15 @@
 # frozen_string_literal: true
 module ElasticRubyServer
   class Events
-    def initialize(global_synchronization)
+    VSCodeDiagnosticSeverity = {
+      error: 0,
+      warning: 1,
+      information: 2,
+      hint: 3
+    }.freeze
+
+    def initialize(server, global_synchronization)
+      @server = server
       @project = Project.new
 
       @global_synchronization = global_synchronization
@@ -40,6 +48,8 @@ module ElasticRubyServer
     def on_textDocument_didSave(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}}
       queue_task(worker: @local_synchronization) do
         file_uri = params.dig("textDocument", "uri")
+
+        publish_diagnostics(file_uri)
         @persistence.reindex(file_uri, wait: false)
       end
     end
@@ -58,6 +68,8 @@ module ElasticRubyServer
         file_buffer = FileBuffer.new(file_content)
 
         @open_files_buffer[file_uri] = file_buffer
+
+        publish_diagnostics(file_uri)
         @persistence.reindex(file_uri, content: { file_uri => file_content }, wait: false)
       end
     end
@@ -66,6 +78,7 @@ module ElasticRubyServer
       queue_task(worker: @buffer_synchronization) do
         file_uri = params.dig("textDocument", "uri")
         @open_files_buffer.delete(file_uri)
+        @server.publish_diagnostics(file_uri, [])
       end
     end
 
@@ -221,6 +234,47 @@ module ElasticRubyServer
     end
 
     private
+
+    def publish_diagnostics(uri)
+      diagnostics = []
+
+      path = Utils.readable_path(@project, uri)
+      results = JSON.parse(`rubocop #{path} --format json`)
+      offenses = results["files"].first["offenses"]
+
+      offenses.each do |offense|
+        loc = offense["location"]
+
+        diagnostics << {
+          severity: diagnostic_severity(offense["severity"]),
+          message: "#{offense["message"]} (#{offense["severity"]}:#{offense["cop_name"]})",
+          range: {
+            start: {
+              line: loc["start_line"] - 1,
+              character: loc["start_column"] - 1
+            },
+            end: {
+              line: loc["last_line"] - 1,
+              character: loc["last_column"]
+            }
+          }
+        }
+      end
+
+      @server.publish_diagnostics(uri, diagnostics)
+    end
+
+    def diagnostic_severity(rubocop_severity)
+      case rubocop_severity
+      when "convention" then VSCodeDiagnosticSeverity[:hint]
+      when "refactor"   then VSCodeDiagnosticSeverity[:hint]
+      when "info"       then VSCodeDiagnosticSeverity[:information]
+      when "warning"    then VSCodeDiagnosticSeverity[:warning]
+      when "error"      then VSCodeDiagnosticSeverity[:error]
+      when "fatal"      then VSCodeDiagnosticSeverity[:error]
+      else VSCodeDiagnosticSeverity[:error]
+      end
+    end
 
     def queue_task(worker:)
       worker.post do

@@ -23,7 +23,7 @@ module ElasticRubyServer
 
     def initialize(connection, global_synchronization)
       @conn = connection
-      @events = Events.new(global_synchronization)
+      @events = Events.new(self, global_synchronization)
     end
 
     def start
@@ -50,6 +50,30 @@ module ElasticRubyServer
         Log.error("Received kill signal: #{e}")
         exit(true)
       end
+    end
+
+    def publish_diagnostics(uri, diagnostics)
+      notification = JSON.unparse({
+        jsonrpc: "2.0",
+        method: "textDocument/publishDiagnostics",
+        params: {
+          uri: uri,
+          diagnostics: diagnostics
+        }
+      })
+
+      # Log.debug("Sending diagnostics:")
+
+      # if notification.bytesize < 1000
+      #   Log.debug(notification)
+      # else
+      #   Log.debug("Large json blob notification")
+      # end
+
+      @conn.write("Content-Length: #{notification.length}\r\n")
+      @conn.write("\r\n")
+      @conn.write(notification)
+      @conn.flush
     end
 
     private

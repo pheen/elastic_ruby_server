@@ -68,6 +68,10 @@ module ElasticRubyServer
       formatted_range
     rescue Rufo::SyntaxError
       # no-op
+    rescue => e
+      Log.error("Error while formatting:")
+      Log.error(e)
+      nil
     end
 
     private
