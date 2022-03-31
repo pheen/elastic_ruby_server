@@ -51,7 +51,6 @@ module ElasticRubyServer
         TypeRestrictionMap.fetch(type&.to_sym, [])
       end
 
-
       def type_query(type)
         { "terms": { "type": restricted_types(type) }}
       end

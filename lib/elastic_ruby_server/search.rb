@@ -144,11 +144,21 @@ module ElasticRubyServer
       file_path = Utils.searchable_path(@project, host_file_path)
 
       results = query_position(file_path, position)
-      result = results.first # todo: something
+      usage_results = results.select { |hit| hit["_source"]["category"] == "usage" }
+      sorted_by_length = usage_results.sort_by { |hit| hit["_source"]["columns"]["lte"] - hit["_source"]["columns"]["gte"] }
+      result = sorted_by_length.first
+
+      Log.debug("query_position results:")
+      Log.debug(results)
 
       return [] unless result
 
-      query_references(file_path, result)
+      qresults = query_references(file_path, result)
+
+      Log.debug("query_references qresults:")
+      Log.debug(qresults)
+
+      qresults
     end
 
     def query_position(file_path, position)
@@ -177,27 +187,66 @@ module ElasticRubyServer
 
     def query_references(file_path, document)
       source = document["_source"]
-
-      type =
-        if source["category"] == "assignment"
-          mapping = QueryBuilder::TypeRestrictionMap.find { |k, v| v.include?(source["type"]) }
-          mapping[0] # the usage type
-        else
-          source["type"]
-        end
-
+      type = source["type"]
       query = {
+        "size": 33,
         "query": {
           "bool": {
             "must": [
               { "match": { "category": "usage" } },
-              { "match": { "name": source["name"] } },
-              { "match": { "type": type } },
-              { "term": { "file_path.tree": file_path } }
-            ]
+              { "match": { "name.keyword": source["name"] } },
+              { "term": { "file_path.tree": file_path } },
+              # { "terms": { "type": types } },
+              { "match": { "type": source["type"] } },
+            ],
+            "should": [],
+            # "minimum_should_match": 1
           }
         }
       }
+
+      # if ["arg", "lvar"].include?(type)
+      #   method_scope_index = source["scope"].reverse.find_index { |scope_name| scope_name.start_with?("+") }
+
+      #   if method_scope_index
+      #     source["scope"][0..method_scope_index].each do |scope_name|
+      #       query[:query][:bool][:must] << { "term": { "scope": scope_name } }
+      #     end
+      #   else
+      #     source["scope"].each do |scope_name|
+      #       query[:query][:bool][:should] << { "term": { "scope": scope_name } }
+      #     end
+      #   end
+      # else
+        source["scope"].each do |scope_name|
+          query[:query][:bool][:should] << { "term": { "scope": scope_name } }
+        end
+      # end
+
+      # [type, *QueryBuilder::TypeRestrictionMap[type.to_sym]].each do |type_name|
+      #   query[:query][:bool][:should] << { "match": { "type": type_name } }
+      # end
+
+
+      if ["arg", "lvar"].include?(type)
+        query[:query][:bool][:minimum_should_match] = 1
+      end
+
+
+      # if ["arg", "lvar"].include?(type)
+      #   # must_matches << { "term": { "file_path.tree": file_path } }
+      #   source["scope"].each do |term|
+      #     should_matches << { "match": { "scope": term } }
+      #   end
+      # else
+      #   # should_matches << { "term": { "file_path.tree": file_path } }
+      #   source["scope"].each do |term|
+      #     should_matches << { "match": { "scope": term } }
+      #   end
+      # end
+
+      # Log.debug("hi")
+      # binding.pry
 
       results = client.search(
         index: @project.index_name,
