@@ -239,7 +239,11 @@ module ElasticRubyServer
       diagnostics = []
 
       path = Utils.readable_path(@project, uri)
-      results = JSON.parse(`rubocop #{path} --format json`)
+      rubocop_config = Utils.readable_path(@project, ".rubocop.yml")
+
+      return unless File.exists?(rubocop_config)
+
+      results = JSON.parse(`rubocop #{path} --format json --config #{rubocop_config}`)
       offenses = results["files"].first["offenses"]
 
       offenses.each do |offense|
