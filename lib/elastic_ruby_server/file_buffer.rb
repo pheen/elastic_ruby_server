@@ -54,8 +54,19 @@ module ElasticRubyServer
     # "range"=>{"start"=>{"line"=>581, "character"=>0}, "end"=>{"line"=>582, "character"=>38}}
     def format_range(range)
       lines = @lines.dup
-      hash = SecureRandom.uuid
+      range_content = lines.join
+      range_hash = Digest::SHA1.hexdigest(range_content)
 
+      @known_ranges ||= Hash.new(0)
+      @known_ranges[range_hash] += 1
+
+      # If the user saves the exact same content twice then stop trying to
+      # format it. This is for performance to avoid formatting the same range
+      # twice, but also to avoid continuously stomping on a users changes if
+      # they don't like what the formatter is doing.
+      return if @known_ranges[range_hash] >= 2
+
+      hash = SecureRandom.uuid
       lines.insert(range["start"]["line"], "##{hash}\n")
       lines.insert(range["end"]["line"] + 2, "##{hash}\n")
 
@@ -63,7 +74,6 @@ module ElasticRubyServer
       hash_pattern = /##{hash}\n(?<formatted_range>.*)\n *##{hash}/m
       formatted_range = formatted_contents.match(hash_pattern)[:formatted_range].sub(/ *\Z/, "")
 
-      # todo: send nothing if no change was made
       # todo: do a diff against the original code to try to send pieces instead of the whole range
       formatted_range
     rescue Rufo::SyntaxError

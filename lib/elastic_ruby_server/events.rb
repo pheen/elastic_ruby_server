@@ -183,10 +183,21 @@ module ElasticRubyServer
       file_uri = params.dig("textDocument", "uri")
       file_buffer = @open_files_buffer[file_uri]
 
+      Log.debug('params["range"]:')
+      Log.debug(params["range"])
+
+      # Log.debug("file_buffer:")
+      # Log.debug(file_buffer)
+
       formatted_range = file_buffer.format_range(params["range"])
+
+      Log.debug("formatted_range:")
+      Log.debug(formatted_range)
 
       if formatted_range
         [{ range: params["range"], newText: formatted_range }]
+      else
+        []
       end
     end
 
