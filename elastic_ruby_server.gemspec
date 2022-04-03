@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "prettier"
   spec.add_dependency "rubocop"
   spec.add_dependency "rubocop-rails"
+  spec.add_dependency "rubocop-daemon"
 
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "fuubar"

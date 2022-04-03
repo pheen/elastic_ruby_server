@@ -91,9 +91,6 @@ RUN apk add --update npm
 
 WORKDIR /app
 
-RUN npm install --save-dev prettier @prettier/plugin-ruby
-RUN npm install -g @fsouza/prettierd
-
 ENV PROJECTS_ROOT /projects/
 # ENV LOG_LEVEL DEBUG
 
@@ -102,6 +99,17 @@ COPY elastic_ruby_server.gemspec .
 COPY lib/elastic_ruby_server/version.rb lib/elastic_ruby_server/version.rb
 
 RUN bundle install -j 8
+
+RUN npm install --save-dev prettier @prettier/plugin-ruby
+RUN npm install -g @fsouza/prettierd
+
+RUN curl https://raw.githubusercontent.com/fohte/rubocop-daemon/master/bin/rubocop-daemon-wrapper -o /tmp/rubocop-daemon-wrapper
+RUN mkdir -p /usr/local/bin/rubocop-daemon-wrapper
+RUN mv /tmp/rubocop-daemon-wrapper /usr/local/bin/rubocop-daemon-wrapper/rubocop
+RUN chmod +x /usr/local/bin/rubocop-daemon-wrapper/rubocop
+
+ENV PATH /usr/local/bin/rubocop-daemon-wrapper:$PATH
+ENV RUBOCOP_DAEMON_USE_BUNDLER true
 
 COPY . ./
 

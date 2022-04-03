@@ -262,9 +262,15 @@ module ElasticRubyServer
         return
       end
 
-      results = JSON.parse(`rubocop #{path} --format json --config #{rubocop_config}`)
-      offenses = results["files"].first["offenses"]
+      results =
+        if ENV["RUBOCOP_DAEMON_USE_BUNDLER"]
+          Log.debug("using rubocop daemon")
+          JSON.parse(`rubocop-daemon exec #{path} -- --format json --config #{rubocop_config}`)
+        else
+          JSON.parse(`rubocop #{path} --format json --config #{rubocop_config}`)
+        end
 
+      offenses = results["files"].first["offenses"]
       offenses.each do |offense|
         loc = offense["location"]
 
