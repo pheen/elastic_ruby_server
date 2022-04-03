@@ -86,7 +86,13 @@ RUN apk update && apk upgrade
 RUN apk add --update curl-dev
 RUN apk add git curl make g++
 
+RUN apk add --update nodejs npm
+RUN apk add --update npm
+
 WORKDIR /app
+
+RUN npm install --save-dev prettier @prettier/plugin-ruby
+RUN npm install -g @fsouza/prettierd
 
 ENV PROJECTS_ROOT /projects/
 # ENV LOG_LEVEL DEBUG

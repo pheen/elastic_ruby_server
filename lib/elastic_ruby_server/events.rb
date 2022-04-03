@@ -195,7 +195,8 @@ module ElasticRubyServer
       Log.debug(formatted_range)
 
       if formatted_range
-        [{ range: params["range"], newText: formatted_range }]
+        # [{ range: params["range"], newText: formatted_range }]
+        formatted_range
       else
         []
       end

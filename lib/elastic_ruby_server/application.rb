@@ -4,7 +4,10 @@ require "patron"
 require "parser/ruby26"
 require "concurrent-ruby"
 require "git"
-require "rufo"
+require "tty-command"
+# require "rufo"
+
+# require "pry"
 
 require "find"
 require "json"

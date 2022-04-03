@@ -7,9 +7,10 @@ PATH
       git
       parser
       patron
+      prettier
       rubocop
       rubocop-rails
-      rufo
+      tty-command
 
 GEM
   remote: https://rubygems.org/
@@ -71,7 +72,10 @@ GEM
     parallel (1.22.1)
     parser (3.1.1.0)
       ast (~> 2.4.1)
+    pastel (0.8.0)
+      tty-color (~> 0.5)
     patron (0.13.3)
+    prettier (2.0.0)
     pry (0.13.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -113,7 +117,9 @@ GEM
       rubocop (>= 1.7.0, < 2.0)
     ruby-progressbar (1.11.0)
     ruby2_keywords (0.0.5)
-    rufo (0.13.0)
+    tty-color (0.6.0)
+    tty-command (0.10.1)
+      pastel (~> 0.8)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.1.0)
