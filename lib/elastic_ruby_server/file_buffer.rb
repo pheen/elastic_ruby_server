@@ -53,9 +53,10 @@ module ElasticRubyServer
 
     # "range"=>{"start"=>{"line"=>581, "character"=>0}, "end"=>{"line"=>582, "character"=>38}}
     def format_range(range)
-      range_lines = @lines[range["start"]["line"]..range["end"]["line"]]
+      line_range = range["start"]["line"]..range["end"]["line"]
+      range_lines = @lines[line_range]
       range_content = range_lines.join
-      range_hash = Digest::SHA1.hexdigest(range_content)
+      range_hash = Digest::SHA1.hexdigest("#{line_range}#{range_content}")
 
       @known_ranges ||= Hash.new(0)
       @known_ranges[range_hash] += 1
@@ -73,34 +74,34 @@ module ElasticRubyServer
 
       contents_with_hash = lines.join
       file_name = "file_buffer_#{range_hash}.rb"
-      # file_name = "file_buffer_#{range_hash}.rb"
-
-      # Log.debug("contents_with_hash:")
-      # Log.debug(contents_with_hash)
-
-      # File.open(file_name, "w") do |f|
-      #   f.write(contents_with_hash)
-      # end
-
-      # formatted_contents = `bundle exec rbprettier --ruby-single-quote=false #{file_name}`
 
       cmd = TTY::Command.new(printer: :null)
-      formatted_contents, _err = cmd.run("prettierd /app/#{file_name}", input: contents_with_hash)
+      path = file_name
+      path = "/app/#{path}" if ENV["DOCKER"]
 
-      formatted_lines = formatted_contents.lines
+      begin
+        rubocop_output, _err = cmd.run("rubocop-daemon exec -- -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
+      rescue TTY::Command::ExitError
+      end
+
+      rubocop_output_lines = rubocop_output.lines
+      content_divider_index = rubocop_output_lines.find_index { |l| l == "====================\n" }
+
+      formatted_lines = rubocop_output_lines[(content_divider_index + 1)..-1]
+      formatted_contents = formatted_lines.join
+
+      return if !formatted_contents && formatted_contents.blank?
 
       opening_hash_index = formatted_lines.find_index { |line| line.include?("#{range_hash}opening") }
       closing_hash_index = formatted_lines.find_index { |line| line.include?("#{range_hash}closing") }
 
       formatted_range_lines = formatted_lines[(opening_hash_index + 1)..(closing_hash_index - 1)]
-
-      if range_lines.last != "\n" && formatted_range_lines.last == "\n"
-        formatted_range_lines.pop
-      end
-
       formatted_range_content = formatted_range_lines.join
       formatted_range_content.sub!(/[\r\n]+$/, "\n")
-      formatted_range_content.sub!(/[\r\n]+$/, "") if formatted_range_lines.count == 1
+
+      unless range_lines.last == "\n\n"
+        formatted_range_content.sub!(/[\r\n]+$/, "")
+      end
 
       partial_range = {
         "start" => {
@@ -116,24 +117,6 @@ module ElasticRubyServer
       Log.error("Error while formatting:")
       Log.error(e)
       nil
-    end
-
-    private
-
-    def content_for_range(range)
-      range_start = change["range"]["start"]
-      range_end = change["range"]["end"]
-
-      preceding_char_count = @lines[0...range_start["line"]].map(&:length).sum
-      start_char_offset = preceding_char_count + range_start["character"]
-
-      preceding_char_count = @lines[range_start["line"]...range_end["line"]].map(&:length).sum
-      end_char_offset = preceding_char_count + range_end["character"]
-
-      @content = +@content # unfreeze
-      @content[start_char_offset, change["rangeLength"]] = change["text"]
-      @lines = @content.lines
-
     end
   end
 end

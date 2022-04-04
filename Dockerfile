@@ -5,6 +5,8 @@ LABEL maintainer="syright@gmail.com"
 RUN apk add --no-cache openjdk11-jre-headless su-exec
 
 ENV VERSION 7.9.3
+ENV DOCKER true
+
 ENV DOWNLOAD_URL "https://artifacts.elastic.co/downloads/elasticsearch"
 ENV ES_TARBAL "${DOWNLOAD_URL}/elasticsearch-oss-${VERSION}-no-jdk-linux-x86_64.tar.gz"
 ENV ES_TARBALL_ASC "${DOWNLOAD_URL}/elasticsearch-oss-${VERSION}-no-jdk-linux-x86_64.tar.gz.asc"
