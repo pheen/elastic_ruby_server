@@ -93,20 +93,15 @@ module ElasticRubyServer
 
         if serializer.valid_ast?
           @last_valid_buffer[file_uri] = file_buffer.dup
-          # file_buffer.change!(file_changes)
         end
 
         if @buffer_synchronization.queue_length == 0
           sleep(0.33) unless file_changes.first["text"] == "."
 
           if @buffer_synchronization.queue_length == 0
-            # if @last_valid_buffer[file_uri].text == file_buffer.text
-              # @persistence.reindex(file_uri, content: { file_uri => file_buffer.text })
-            # elsif @last_valid_buffer[file_uri]
             if @last_valid_buffer[file_uri]
               @persistence.reindex(file_uri, content: { file_uri => @last_valid_buffer[file_uri].text })
             end
-            # end
           end
         end
       end
@@ -182,24 +177,9 @@ module ElasticRubyServer
 
       file_uri = params.dig("textDocument", "uri")
       file_buffer = @open_files_buffer[file_uri]
-
-      Log.debug('params["range"]:')
-      Log.debug(params["range"])
-
-      # Log.debug("file_buffer:")
-      # Log.debug(file_buffer)
-
       formatted_range = file_buffer.format_range(params["range"])
 
-      Log.debug("formatted_range:")
-      Log.debug(formatted_range)
-
-      if formatted_range
-        # [{ range: params["range"], newText: formatted_range }]
-        formatted_range
-      else
-        []
-      end
+      formatted_range ? formatted_range : []
     end
 
     def on_textDocument_rename(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/components/manage/app/models/manage/user_goal.rb"}, "position"=>{"line"=>55, "character"=>9}, "newName"=>"goal_mask2"}
@@ -253,14 +233,14 @@ module ElasticRubyServer
       path = Utils.readable_path(@project, uri)
       rubocop_config = Utils.readable_path(@project, "/.rubocop.yml")
 
-      Log.debug("rubocop_config: #{rubocop_config}")
+      return unless rubocop_config
 
-      if File.exists?(rubocop_config)
-        Log.debug("rubocop_config exists!")
-      else
-        Log.debug("rubocop_config doesnt exist :(")
-        return
-      end
+      # if File.exists?(rubocop_config)
+      #   Log.debug("rubocop_config exists!")
+      # else
+      #   Log.debug("rubocop_config doesnt exist :(")
+      #   return
+      # end
 
       results =
         if ENV["RUBOCOP_DAEMON_USE_BUNDLER"]

@@ -1,19 +1,16 @@
 # frozen_string_literal: true
-require "elasticsearch"
-require "patron"
-require "parser/ruby26"
 require "concurrent-ruby"
+require "elasticsearch"
 require "git"
+require "parser/ruby26"
+require "patron"
 require "tty-command"
-# require "rufo"
 
-# require "pry"
-
+require "digest/sha1"
 require "find"
 require "json"
-require "socket"
-require "digest/sha1"
 require "logger"
+require "socket"
 
 Dir["#{File.expand_path(File.dirname(__FILE__))}/**/*.rb"].each do |file|
   require file
