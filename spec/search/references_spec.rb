@@ -14,12 +14,14 @@ module ElasticRubyServer
 
           references = subject.find_references(file_path, assignment_position).map { |doc| doc["_source"] }
 
-          reference1 = references.find { |ref| ref["scope"] == ["UsageReferences", "method1"] }
-          reference2 = references.find { |ref| ref["scope"] == ["UsageReferences", "method2"] }
+          reference1 = references.find { |ref| ref["scope"] == ["UsageReferences", "initialize"] }
+          reference2 = references.find { |ref| ref["scope"] == ["UsageReferences", "method1"] }
+          reference3 = references.find { |ref| ref["scope"] == ["UsageReferences", "method2"] }
 
-          expect(references.count).to eq(2)
-          expect(reference1).to include("scope" =>["UsageReferences", "method1"], "category"=>"usage", "name"=>"@var", "type"=>"ivar", "line"=>7, "columns"=>{"gte"=>5, "lte"=>9}, "file_path"=>"/references.rb")
-          expect(reference2).to include("scope"=>["UsageReferences", "method2"], "category"=>"usage", "name"=>"@var", "type"=>"ivar", "line"=>11, "columns"=>{"gte"=>5, "lte"=>9}, "file_path"=>"/references.rb")
+          expect(references.count).to eq(3)
+          expect(reference1).to include("scope"=>["UsageReferences", "initialize"], "category"=>"usage", "name"=>"@var", "type"=>"ivar", "line"=>3, "columns"=>{"gte"=>5, "lte"=>9}, "file_path"=>"/references.rb")
+          expect(reference2).to include("scope"=>["UsageReferences", "method1"], "category"=>"usage", "name"=>"@var", "type"=>"ivar", "line"=>7, "columns"=>{"gte"=>5, "lte"=>9}, "file_path"=>"/references.rb")
+          expect(reference3).to include("scope"=>["UsageReferences", "method2"], "category"=>"usage", "name"=>"@var", "type"=>"ivar", "line"=>11, "columns"=>{"gte"=>5, "lte"=>9}, "file_path"=>"/references.rb")
         end
 
         # it "finds variables when included in an array" do
