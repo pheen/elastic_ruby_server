@@ -93,11 +93,11 @@ Layout/IndentationWidth:
 Layout/InitialIndentation:
   Enabled: true
 
-Layout/LineLength:
-  Enabled: true
-  IgnoreCopDirectives: true
-  IgnoredPatterns:
-    - '^\s*# '
+# Layout/LineLength:
+#   Enabled: true
+#   IgnoreCopDirectives: true
+#   IgnoredPatterns:
+#     - '^\s*# '
 
 Layout/MultilineArrayBraceLayout:
   Enabled: true

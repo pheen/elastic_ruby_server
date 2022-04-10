@@ -54,6 +54,7 @@ module ElasticRubyServer
     # "range"=>{"start"=>{"line"=>581, "character"=>0}, "end"=>{"line"=>582, "character"=>38}}
     def format_range(range)
       line_range = range["start"]["line"]..range["end"]["line"]
+
       range_lines = @lines[line_range]
       range_content = range_lines.join
       range_hash = Digest::SHA1.hexdigest("#{line_range}#{range_content}")
@@ -97,11 +98,8 @@ module ElasticRubyServer
 
       formatted_range_lines = formatted_lines[(opening_hash_index + 1)..(closing_hash_index - 1)]
       formatted_range_content = formatted_range_lines.join
-      formatted_range_content.sub!(/[\r\n]+$/, "\n")
 
-      unless range_lines.last == "\n\n"
-        formatted_range_content.sub!(/[\r\n]+$/, "")
-      end
+      formatted_range_content.sub!(/[\r\n]+\z/, "")
 
       partial_range = {
         "start" => {
