@@ -88,9 +88,6 @@ RUN apk update && apk upgrade
 RUN apk add --update curl-dev
 RUN apk add git curl make g++
 
-RUN apk add --update nodejs npm
-RUN apk add --update npm
-
 WORKDIR /app
 
 ENV PROJECTS_ROOT /projects/
@@ -102,16 +99,12 @@ COPY lib/elastic_ruby_server/version.rb lib/elastic_ruby_server/version.rb
 
 RUN bundle install -j 8
 
-RUN npm install --save-dev prettier @prettier/plugin-ruby
-RUN npm install -g @fsouza/prettierd
-
 RUN curl https://raw.githubusercontent.com/fohte/rubocop-daemon/master/bin/rubocop-daemon-wrapper -o /tmp/rubocop-daemon-wrapper
 RUN mkdir -p /usr/local/bin/rubocop-daemon-wrapper
 RUN mv /tmp/rubocop-daemon-wrapper /usr/local/bin/rubocop-daemon-wrapper/rubocop
 RUN chmod +x /usr/local/bin/rubocop-daemon-wrapper/rubocop
 
 ENV PATH /usr/local/bin/rubocop-daemon-wrapper:$PATH
-ENV RUBOCOP_DAEMON_USE_BUNDLER true
 
 COPY . ./
 

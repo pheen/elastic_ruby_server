@@ -7,7 +7,6 @@ PATH
       git
       parser
       patron
-      prettier
       rubocop
       rubocop-daemon
       rubocop-rails
@@ -76,7 +75,6 @@ GEM
     pastel (0.8.0)
       tty-color (~> 0.5)
     patron (0.13.3)
-    prettier (2.0.0)
     pry (0.13.1)
       coderay (~> 1.1)
       method_source (~> 1.0)

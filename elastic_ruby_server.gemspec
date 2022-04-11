@@ -25,7 +25,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "git"
   spec.add_dependency "concurrent-ruby"
   spec.add_dependency "tty-command"
-  spec.add_dependency "prettier"
   spec.add_dependency "rubocop"
   spec.add_dependency "rubocop-rails"
   spec.add_dependency "rubocop-daemon"

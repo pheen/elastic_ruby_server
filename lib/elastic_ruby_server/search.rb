@@ -205,31 +205,11 @@ module ElasticRubyServer
         }
       }
 
-      # if ["arg", "lvar"].include?(type)
-      #   method_scope_index = source["scope"].reverse.find_index { |scope_name| scope_name.start_with?("+") }
-
-      #   if method_scope_index
-      #     source["scope"][0..method_scope_index].each do |scope_name|
-      #       query[:query][:bool][:must] << { "term": { "scope": scope_name } }
-      #     end
-      #   else
-      #     source["scope"].each do |scope_name|
-      #       query[:query][:bool][:should] << { "term": { "scope": scope_name } }
-      #     end
-      #   end
-      # else
-        source.fetch("scope", []).each do |scope_name|
-          query[:query][:bool][:should] << { "match": { "scope": scope_name } }
-        end
-      # end
-
-      # [type, *QueryBuilder::TypeRestrictionMap[type.to_sym]].each do |type_name|
-      #   query[:query][:bool][:should] << { "match": { "type": type_name } }
-      # end
-
+      source.fetch("scope", []).each do |scope_name|
+        query[:query][:bool][:should] << { "match": { "scope": scope_name } }
+      end
 
       if ["arg", "lvar"].include?(type)
-        # query[:query][:bool][:minimum_should_match] = 1
         source.fetch("method_scope", []).each do |scope_name|
           query[:query][:bool][:must] << { "match": { "method_scope": scope_name } }
         end
@@ -239,21 +219,8 @@ module ElasticRubyServer
         end
       end
 
-
-      # if ["arg", "lvar"].include?(type)
-      #   # must_matches << { "term": { "file_path.tree": file_path } }
-      #   source["scope"].each do |term|
-      #     should_matches << { "match": { "scope": term } }
-      #   end
-      # else
-      #   # should_matches << { "term": { "file_path.tree": file_path } }
-      #   source["scope"].each do |term|
-      #     should_matches << { "match": { "scope": term } }
-      #   end
-      # end
-
-      # Log.debug("hi")
-      # binding.pry
+      Log.debug("QUERY:")
+      Log.debug(query)
 
       results = client.search(
         index: @project.index_name,
@@ -272,13 +239,7 @@ module ElasticRubyServer
               { "match": { "category": "assignment" } },
               { "terms": { "type": ["def"] } },
               { "match": { "scope": klass } }
-              # { "match": { "scope": "Arguments" } }
             ],
-            # "should": [
-            #   { "wildcard": { "file_path.tree": "*#{query}*" } },
-            #   { "wildcard": { "file_path.tree_reversed": "*#{query}*" } }
-            # ],
-            # "minimum_should_match": 1
           }
         }
       }

@@ -14,6 +14,7 @@ Supported:
 - [x] [Rename Symbols](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#rename-symbols)
 - [x] [Provide Diagnostics](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#provide-diagnostics)
 - [ ] [Show Code Completion Proposals](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-code-completion-proposals)
+- [ ] [Possible Actions on Errors or Warnings](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#possible-actions-on-errors-or-warnings)
 
 Unsupported:
 - [ ] [Show Hovers](https://code.visualstudio.com/api/language-extensions/programmatic-language-features#show-hovers)

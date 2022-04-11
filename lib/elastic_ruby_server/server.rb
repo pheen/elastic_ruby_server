@@ -13,11 +13,11 @@ module ElasticRubyServer
         textDocumentSync: 2,
         workspaceSymbolProvider: true,
         # Not implemented:
-        codeActionProvider: false,
-        completionProvider: {
-          triggerCharacters: ['.', '::'],
-          resolveProvider: false
-        },
+        # codeActionProvider: false,
+        # completionProvider: {
+        #   triggerCharacters: ['.', '::'],
+        #   resolveProvider: false
+        # },
       }
     }.freeze
 

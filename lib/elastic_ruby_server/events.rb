@@ -229,28 +229,15 @@ module ElasticRubyServer
 
     def publish_diagnostics(uri)
       diagnostics = []
-
       path = Utils.readable_path(@project, uri)
       rubocop_config = Utils.readable_path(@project, "/.rubocop.yml")
+      rubocop_config ||= "/app/.rubocop.yml"
 
-      return unless rubocop_config
-
-      # if File.exists?(rubocop_config)
-      #   Log.debug("rubocop_config exists!")
-      # else
-      #   Log.debug("rubocop_config doesnt exist :(")
-      #   return
-      # end
-
-      results =
-        if ENV["RUBOCOP_DAEMON_USE_BUNDLER"]
-          Log.debug("using rubocop daemon")
-          JSON.parse(`rubocop-daemon exec #{path} -- --format json --config #{rubocop_config}`)
-        else
-          JSON.parse(`rubocop #{path} --format json --config #{rubocop_config}`)
-        end
-
+      results = JSON.parse(
+        `rubocop-daemon exec #{path} -- --config #{rubocop_config} --format json `
+      )
       offenses = results["files"].first["offenses"]
+
       offenses.each do |offense|
         loc = offense["location"]
 
