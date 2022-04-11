@@ -3,11 +3,13 @@ class UsageReferences
     @var = :var
   end
 
-  def method1
+  def method1(var)
     @var
+    var
   end
 
-  def method2
+  def method2(var)
     @var
+    var
   end
 end

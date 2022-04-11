@@ -16,6 +16,10 @@ module ElasticRubyServer
         []
       end
 
+      def method_scope_names
+        []
+      end
+
       def category
         self.class::Category
       end

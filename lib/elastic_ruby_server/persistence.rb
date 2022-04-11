@@ -48,6 +48,7 @@ module ElasticRubyServer
             }
           },
           "scope": { type: "text" },
+          "method_scope": { type: "text" },
           "name": {
             "type": "text",
             "fields": {

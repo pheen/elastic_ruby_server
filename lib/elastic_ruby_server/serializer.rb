@@ -18,31 +18,37 @@ module ElasticRubyServer
       !@ast.nil?
     end
 
-    def serialize_nodes(ast = @ast, scope = [], serialized = [], root: true)
+    def serialize_nodes(ast = @ast, scope = [], method_scope = [], serialized = [], root: true)
       return [] unless ast.respond_to?(:children)
 
-      node = NodeTypes.build_node(ast)
-
       if root
+        node = NodeTypes.build_node(ast)
+
         unless node.is_a?(NodeTypes::NodeMissing)
-          serialized.concat(serialize(scope, node))
+          serialized.concat(serialize(scope, method_scope, node))
         end
 
         scope += node.scope_names.compact
+        method_scope += node.method_scope_names.compact
       end
 
       ast.children.each do |child_ast|
         starting_scope = scope.clone
+        starting_method_scope = method_scope.clone
+
         child_node = NodeTypes.build_node(child_ast)
 
         unless child_node.is_a?(NodeTypes::NodeMissing)
-          serialized.concat(serialize(scope, child_node))
+          serialized.concat(serialize(scope, method_scope, child_node))
         end
 
         scope += child_node.scope_names.compact
-        serialize_nodes(child_ast, scope, serialized, root: false)
+        method_scope += child_node.method_scope_names.compact
+
+        serialize_nodes(child_ast, scope, method_scope, serialized, root: false)
 
         scope.pop(scope_diff(scope, starting_scope))
+        method_scope.pop(scope_diff(method_scope, starting_method_scope))
       end
 
       serialized
@@ -50,10 +56,10 @@ module ElasticRubyServer
 
     private
 
-    def serialize(scope, node)
+    def serialize(scope, method_scope, node)
       serialized_nodes = []
-      serialized_nodes << Document.build(scope, node)
-      serialized_nodes << Document.build_assignment_reference(scope, node)
+      serialized_nodes << Document.build(scope, method_scope, node)
+      serialized_nodes << Document.build_assignment_reference(scope, method_scope, node)
 
       serialized_nodes.compact
     end

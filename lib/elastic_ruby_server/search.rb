@@ -84,7 +84,7 @@ module ElasticRubyServer
         {
           name: source["name"],
           kind: lookup_vscode_type(source["type"]),
-          containerName: source["scope"].last,
+          containerName: source.fetch("method_scope", [""]).last,
           location: SymbolLocation.build(
             source: source,
             workspace_path: @project.host_workspace_path
@@ -119,7 +119,7 @@ module ElasticRubyServer
         {
           name: source["name"],
           kind: lookup_vscode_type(source["type"]),
-          containerName: source["scope"].last,
+          containerName: source.fetch("method_scope", [""]).last,
           location: SymbolLocation.build(
             source: source,
             workspace_path: @project.host_workspace_path
@@ -218,8 +218,8 @@ module ElasticRubyServer
       #     end
       #   end
       # else
-        source["scope"].each do |scope_name|
-          query[:query][:bool][:should] << { "term": { "scope": scope_name } }
+        source.fetch("scope", []).each do |scope_name|
+          query[:query][:bool][:should] << { "match": { "scope": scope_name } }
         end
       # end
 
@@ -229,7 +229,14 @@ module ElasticRubyServer
 
 
       if ["arg", "lvar"].include?(type)
-        query[:query][:bool][:minimum_should_match] = 1
+        # query[:query][:bool][:minimum_should_match] = 1
+        source.fetch("method_scope", []).each do |scope_name|
+          query[:query][:bool][:must] << { "match": { "method_scope": scope_name } }
+        end
+      else
+        source.fetch("method_scope", []).each do |scope_name|
+          query[:query][:bool][:should] << { "match": { "method_scope": scope_name } }
+        end
       end
 
 

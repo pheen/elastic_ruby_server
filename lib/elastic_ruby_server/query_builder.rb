@@ -21,7 +21,7 @@ module ElasticRubyServer
         ]
         should_matches = []
 
-        source["scope"].each do |term|
+        source.fetch("scope", []).each do |term|
           should_matches << { "match": { "scope": term } }
         end
 
@@ -31,8 +31,16 @@ module ElasticRubyServer
 
         if ["arg", "lvar"].include?(type)
           must_matches << file_path_query(file_path)
+
+          source.fetch("method_scope", []).each do |term|
+            must_matches << { "match": { "method_scope": term } }
+          end
         else
           should_matches << file_path_query(file_path)
+
+          source.fetch("method_scope", []).each do |term|
+            should_matches << { "match": { "method_scope": term } }
+          end
         end
 
         {

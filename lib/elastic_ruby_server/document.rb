@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 module ElasticRubyServer
   class Document
-    def self.build(scope, node)
+    def self.build(scope, method_scope, node)
       {
         scope: scope + node.scope,
+        method_scope: method_scope,
         category: node.category,
         name: node.node_name,
         type: node.node_type,
@@ -19,7 +20,7 @@ module ElasticRubyServer
       nil
     end
 
-    def self.build_assignment_reference(scope, node)
+    def self.build_assignment_reference(scope, method_scope, node)
       return unless node.category == :assignment
       return if [:class, :module].include?(node.node_type) # they already create usages
 
@@ -32,6 +33,7 @@ module ElasticRubyServer
 
       {
         scope: scope,
+        method_scope: method_scope,
         category: :usage,
         name: node.node_name,
         type: usage_type,
