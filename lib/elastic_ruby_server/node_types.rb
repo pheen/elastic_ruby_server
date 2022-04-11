@@ -3,42 +3,63 @@ module ElasticRubyServer
   module NodeTypes
     include BaseNodeTypes
 
+    RubyMethods = [
+      :attr_accessor,
+      :attr_reader,
+      :attr_writer,
+    ].freeze
+
     RailsMethods = [
       :belongs_to,
       :has_one,
       :has_many,
-      :has_and_belongs_to_many
+      :has_and_belongs_to_many,
     ].freeze
 
     RspecMethods = [
       :let!,
-      :let
+      :let,
     ].freeze
 
+    MetaMethods = [
+      RubyMethods,
+      RailsMethods,
+      RspecMethods,
+    ].flatten.freeze
+
     def build_node(ast)
-      return NodeTypes::NodeMissing.new(ast) unless ast.respond_to?(:type)
+      return unless ast.respond_to?(:type)
+        # return NodeTypes::NodeMissing.new(ast)
+      # end
 
       node_class_name = "#{ast.type.capitalize}Node"
       node = NodeTypes.const_get(node_class_name).new(ast)
 
       if node.ignore?
-        NodeTypes::IgnoreDefinition.new(ast)
+        # binding.pry
+        # NodeTypes::IgnoreDefinition.new(ast)
       else
         if node.node_type == :send && RailsMethods.include?(node.node_name) || RspecMethods.include?(node.node_name)
           meta_node = NodeTypes::MetaNode.new(ast)
 
           if meta_node.ignore?
-            NodeTypes::IgnoreDefinition.new(ast)
+            # NodeTypes::IgnoreDefinition.new(ast)
           else
-            meta_node
+            yield(meta_node)
           end
+        elsif node.node_type == :send && RubyMethods.include?(node.node_name)
+          [*ast.children][2..-1].to_a
+            .select { |child_node| child_node.type == :sym }
+            .each do |child_node|
+              yield(NodeTypes::MetaSymNode.new(child_node))
+            end
         else
-          node
+          yield(node)
         end
       end
     rescue NameError
       # todo: look for "Missing node: #{node_class_name}"
-      NodeTypes::NodeMissing.new(ast)
+      # NodeTypes::NodeMissing.new(ast)
     end
     module_function :build_node
 
@@ -153,7 +174,7 @@ module ElasticRubyServer
       end
     end
 
-    class MetaNode < Assignment;
+    class MetaNode < Assignment
       def ignore?
         node.children[2].nil?
       end
@@ -168,6 +189,12 @@ module ElasticRubyServer
 
       def end_column
         node.children[2].loc.last_column
+      end
+    end
+
+    class MetaSymNode < Assignment
+      def scope_names
+        []
       end
     end
 

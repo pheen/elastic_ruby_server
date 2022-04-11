@@ -289,6 +289,7 @@ module ElasticRubyServer
 
     def query_assignment(file_path, usage)
       query = QueryBuilder.assignment_query(file_path, usage)
+
       results = client.search(
         index: @project.index_name,
         body: query,

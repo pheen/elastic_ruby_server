@@ -17,6 +17,7 @@ module ElasticRubyServer
     rescue => e
       Log.debug("Node failed to build:")
       Log.debug(node.inspect)
+      Log.debug(e)
       nil
     end
 
@@ -46,6 +47,7 @@ module ElasticRubyServer
     rescue => e
       Log.debug("Node failed to build:")
       Log.debug(node.inspect)
+      Log.debug(e)
       nil
     end
   end

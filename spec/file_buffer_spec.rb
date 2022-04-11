@@ -100,7 +100,7 @@ module ElasticRubyServer
         range = { "start" => { "line" => 2, "character" => 0 }, "end" => { "line" => 2, "character" => 41 } }
         result = subject.format_range(range)
 
-        expect(result[0][:newText]).to eq("      ::Pulsar::Client.new(\"config.host\")")
+        expect(result[0][:newText]).to eq("      ::Pulsar::Client.new(\"config.host\")\n")
       end
 
       # it "basic blooms" do
@@ -125,7 +125,7 @@ module ElasticRubyServer
           expected_result =
             "    \"asdd\"\n" +
             "\n" +
-            "    delegate :flushd, to: :segment_client"
+            "    delegate :flushd, to: :segment_client\n"
 
           result = subject.format_range(range)[0]
 

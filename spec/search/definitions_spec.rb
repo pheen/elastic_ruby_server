@@ -54,7 +54,15 @@ module ElasticRubyServer
       end
 
       it "instance methods" do
-        expect(find_definition("method1", 25, 5)).to match_definition(line: 20, start: 7, end: 14)
+        expect(find_definition("method2", 25, 5)).to match_definition(line: 20, start: 7, end: 14)
+      end
+
+      it "accessor methods" do
+        expect(find_definition("method1", 36, 5)).to match_definition(line: 30, start: 17, end: 25)
+        expect(find_definition("method2", 37, 5)).to match_definition(line: 31, start: 15, end: 23)
+        expect(find_definition("method3", 38, 5)).to match_definition(line: 31, start: 25, end: 33)
+        expect(find_definition("method4", 39, 5)).to match_definition(line: 32, start: 15, end: 23)
+        expect(find_definition("method5", 40, 5)).to match_definition(line: 33, start: 5, end: 13)
       end
     end
 

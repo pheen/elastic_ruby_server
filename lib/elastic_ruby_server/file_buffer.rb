@@ -99,11 +99,11 @@ module ElasticRubyServer
       formatted_range_lines = formatted_lines[(opening_hash_index + 1)..(closing_hash_index - 1)]
       formatted_range_content = formatted_range_lines.join
 
-      formatted_range_content.sub!(/[\r\n]+\z/, "")
+      # formatted_range_content.sub!(/[\r\n]+\z/, "")
 
-      if range_content.end_with?("\n\n")
-        formatted_range_content << "\n"
-      end
+      # if range_content.end_with?("\n\n")
+      #   formatted_range_content << "\n"
+      # end
 
       partial_range = {
         "start" => {

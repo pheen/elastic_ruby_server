@@ -49,7 +49,11 @@ module ElasticRubyServer
       end
     end
 
-    class NodeMissing < Base; end
+    class NodeMissing < Base
+      def ignore?
+        true
+      end
+    end
 
     class Usage < Base
       Category = :usage

@@ -22,28 +22,28 @@ module ElasticRubyServer
       return [] unless ast.respond_to?(:children)
 
       if root
-        node = NodeTypes.build_node(ast)
+        NodeTypes.build_node(ast) do |node|
+          # unless node.is_a?(NodeTypes::NodeMissing)
+            serialized.concat(serialize(scope, method_scope, node))
+          # end
 
-        unless node.is_a?(NodeTypes::NodeMissing)
-          serialized.concat(serialize(scope, method_scope, node))
+          scope += node.scope_names.compact
+          method_scope += node.method_scope_names.compact
         end
-
-        scope += node.scope_names.compact
-        method_scope += node.method_scope_names.compact
       end
 
       ast.children.each do |child_ast|
         starting_scope = scope.clone
         starting_method_scope = method_scope.clone
 
-        child_node = NodeTypes.build_node(child_ast)
+        NodeTypes.build_node(child_ast) do |child_node|
+          # unless child_node.is_a?(NodeTypes::NodeMissing)
+            serialized.concat(serialize(scope, method_scope, child_node))
+          # end
 
-        unless child_node.is_a?(NodeTypes::NodeMissing)
-          serialized.concat(serialize(scope, method_scope, child_node))
+          scope += child_node.scope_names.compact
+          method_scope += child_node.method_scope_names.compact
         end
-
-        scope += child_node.scope_names.compact
-        method_scope += child_node.method_scope_names.compact
 
         serialize_nodes(child_ast, scope, method_scope, serialized, root: false)
 
