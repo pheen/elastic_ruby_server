@@ -209,7 +209,12 @@ module ElasticRubyServer
           when "ivar"
             edit[:newText] = "@#{edit[:newText]}"
           when "sym"
-            edit[:newText] = ":#{edit[:newText]}"
+            lines = @open_files_buffer[file_uri].text.lines
+            line = lines[edit[:range][:start][:line]]
+
+            if line[edit[:range][:start][:character]] == ":"
+              edit[:newText] = ":#{edit[:newText]}"
+            end
           end
 
           edit
