@@ -1,5 +1,7 @@
 module ElasticRubyServer
   class Project
+    IndexNameVersion = 2
+
     def initialize
       @host_project_roots = ENV.fetch("HOST_PROJECT_ROOTS")
       @project_root = ENV.fetch("PROJECTS_ROOT")
@@ -14,7 +16,7 @@ module ElasticRubyServer
 
     def index_name
       # Elasticsearch index name
-      @index_name ||= Digest::SHA1.hexdigest(host_workspace_path)
+      @index_name ||= Digest::SHA1.hexdigest("#{host_workspace_path}#{IndexNameVersion}")
     end
 
     def container_workspace_path
