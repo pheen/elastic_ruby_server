@@ -71,6 +71,18 @@ module ElasticRubyServer
       end
     end
 
+    describe "ruby" do
+      let(:file_path) { "/definitions/ruby.rb" }
+
+      it "accessors" do
+        expect(find_definition("method1", 8,  5)).to match_definition(line: 2, start: 17, end: 25)
+        expect(find_definition("method2", 9,  5)).to match_definition(line: 3, start: 15, end: 23)
+        expect(find_definition("method3", 10, 5)).to match_definition(line: 3, start: 25, end: 33)
+        expect(find_definition("method4", 11, 5)).to match_definition(line: 4, start: 15, end: 23)
+        expect(find_definition("method5", 12, 5)).to match_definition(line: 5, start: 5, end: 13)
+      end
+    end
+
     describe "rails" do
       let(:file_path) { "/definitions/rails.rb" }
 

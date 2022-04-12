@@ -3,6 +3,12 @@ module ElasticRubyServer
   module NodeTypes
     include BaseNodeTypes
 
+    AccessorMethods = [
+      :attr_accessor,
+      :attr_reader,
+      :attr_writer,
+    ].freeze
+
     RailsMethods = [
       :belongs_to,
       :has_one,
@@ -32,6 +38,14 @@ module ElasticRubyServer
           else
             meta_node
           end
+        elsif node.node_type == :send && AccessorMethods.include?(node.node_name)
+          [*ast.children][2..-1].to_a
+            .select { |child_node| child_node.type == :sym }
+            .each do |child_node|
+              yield(NodeTypes::MetaSymNode.new(child_node))
+            end
+
+          NodeTypes::IgnoreDefinition.new(ast)
         else
           node
         end
@@ -168,6 +182,12 @@ module ElasticRubyServer
 
       def end_column
         node.children[2].loc.last_column
+      end
+    end
+
+    class MetaSymNode < Assignment
+      def scope_names
+        []
       end
     end
 
