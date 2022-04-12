@@ -69,9 +69,11 @@ module ElasticRubyServer
       return if @known_ranges[range_hash] >= 2
 
       lines = @lines.dup
+      new_line = lines[0..range["end"]["line"] + 1].compact[-1].end_with?("\n")
+      space = new_line ? "" : "\n"
 
       lines.insert(range["start"]["line"], "# #{range_hash}opening\n")
-      lines.insert(range["end"]["line"] + 2, "# #{range_hash}closing\n")
+      lines.insert(range["end"]["line"] + 2, "#{space}# #{range_hash}closing\n")
 
       contents_with_hash = lines.join
       file_name = "file_buffer_#{range_hash}.rb"
@@ -101,7 +103,7 @@ module ElasticRubyServer
 
       formatted_range_content.sub!(/[\r\n]+\z/, "")
 
-      if range_content.end_with?("\n\n")
+      if range_content.end_with?("\n")
         formatted_range_content << "\n"
       end
 

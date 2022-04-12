@@ -100,7 +100,7 @@ module ElasticRubyServer
         range = { "start" => { "line" => 2, "character" => 0 }, "end" => { "line" => 2, "character" => 41 } }
         result = subject.format_range(range)
 
-        expect(result[0][:newText]).to eq("      ::Pulsar::Client.new(\"config.host\")")
+        expect(result[0][:newText]).to eq("      ::Pulsar::Client.new(\"config.host\")\n")
       end
 
       # it "basic blooms" do
@@ -117,21 +117,37 @@ module ElasticRubyServer
       #   expect(result[:range]).to eq({ "start" => { "character" => 0, "line" => 2 }, "end" => { "character" => 4, "line" => 4 } })
       # end
 
-      context "case2" do
+      context "case1" do
         let(:file_contents) { File.read("./spec/formatting/case1.rb") }
 
-        it "formats correctly case2" do
-          range = {"start" => {"line" => 55,"character" => 0},"end" => {"line" => 57,"character" => 41}}
-          expected_result =
-            "    \"asdd\"\n" +
-            "\n" +
-            "    delegate :flushd, to: :segment_client"
+        # it "formats correctly case1" do
+        #   range = {"start" => {"line" => 55,"character" => 0},"end" => {"line" => 57,"character" => 41}}
+        #   expected_result =
+        #     "    \"asdd\"\n" +
+        #     "\n" +
+        #     "    delegate :flushd, to: :segment_client\n"
 
-          result = subject.format_range(range)[0]
+        #   result = subject.format_range(range)[0]
 
-          expect(result[:newText]).to eq(expected_result)
-          expect(result[:range]).to eq({ "start" => { "character" => 0, "line" => 55 }, "end" => { "character" => 42, "line" => 57 } })
-        end
+        #   expect(result[:newText]).to eq(expected_result)
+        #   expect(result[:range]).to eq({ "start" => { "character" => 0, "line" => 55 }, "end" => { "character" => 42, "line" => 57 } })
+        # end
+      end
+    end
+
+    context "case2" do
+      let(:file_contents) { File.read("./spec/formatting/case2.rb") }
+
+      it "formats correctly case1" do
+        range = { "start" => { "line" => 0, "character" => 0 }, "end" => { "line" => 3, "character" => 0 } }
+        expected_result =
+          "module SomeModule\n" +
+          "end"
+
+        result = subject.format_range(range)[0]
+
+        expect(result[:newText]).to eq(expected_result)
+        expect(result[:range]).to eq({ "start" => { "character" => 0, "line" => 0 }, "end" => { "character" => 3, "line" => 3 } })
       end
     end
   end
