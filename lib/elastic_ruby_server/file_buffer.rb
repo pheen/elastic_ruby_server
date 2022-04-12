@@ -103,7 +103,7 @@ module ElasticRubyServer
 
       formatted_range_content.sub!(/[\r\n]+\z/, "")
 
-      if range_content.end_with?("\n")
+      if range_content.end_with?("\n\n")
         formatted_range_content << "\n"
       end
 
