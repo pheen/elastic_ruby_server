@@ -94,13 +94,26 @@ module ElasticRubyServer
     end
 
     describe ".format_range" do
-      let(:file_contents) { "def client\n@client ||= begin\n::Pulsar::Client.new(\"config.host\")\nend\nend\n" }
+      context "basic" do
+        let(:file_contents) { "def client\n@client ||= begin\n::Pulsar::Client.new(\"config.host\")\nend\nend\n" }
 
-      it "basic formatting" do
-        range = { "start" => { "line" => 2, "character" => 0 }, "end" => { "line" => 2, "character" => 41 } }
-        result = subject.format_range(range)
+        it "basic formatting" do
+          range = { "start" => { "line" => 2, "character" => 0 }, "end" => { "line" => 2, "character" => 41 } }
+          result = subject.format_range(range)
 
-        expect(result[0][:newText]).to eq("      ::Pulsar::Client.new(\"config.host\")\n")
+          expect(result[0][:newText]).to eq("      ::Pulsar::Client.new(\"config.host\")")
+        end
+      end
+
+      context "EOF" do
+        let(:file_contents) { "module SomeModule\nend\n" }
+
+        it "doesnt remove line from end of file" do
+          range = { "start" => { "line" => 0, "character" => 0 }, "end" => { "line" => 2, "character" => 0 } }
+          result = subject.format_range(range)
+
+          expect(result[0][:newText]).to eq("module SomeModule\nend\n")
+        end
       end
 
       # it "basic blooms" do

@@ -107,6 +107,10 @@ module ElasticRubyServer
         formatted_range_content << "\n"
       end
 
+      if (range["end"]["line"] == @lines.count) && range_content.end_with?("\n")
+        formatted_range_content << "\n"
+      end
+
       partial_range = {
         "start" => {
           "line" => range["start"]["line"], "character" => 0,
