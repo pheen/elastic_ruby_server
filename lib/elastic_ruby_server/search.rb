@@ -59,19 +59,36 @@ module ElasticRubyServer
           "bool": {
             "must": [
               { "match": { "category": "assignment" } },
-              { "terms": { "type": SymbolTypesForLookup } }
-            ],
-            "should": [
-              { "terms": { "type": ["module", "class"] } },
-              { "match": { "name": "#{query}" } },
-              { "wildcard": { "name.keyword": "*#{query}*" } },
-              { "wildcard": { "file_path.tree": "*#{query}*" } },
-              { "wildcard": { "file_path.tree_reversed": "*#{query}*" } }
-            ],
-            "minimum_should_match": 1
+              { "terms": { "type": SymbolTypesForLookup } },
+              {
+                "bool": {
+                  "should": [
+                    { "match": { "name": "#{query}" } },
+                    { "wildcard": { "name.keyword": "*#{query}*" } },
+                  ],
+                  "minimum_should_match": 1
+                },
+              },
+              {
+                "bool": {
+                  "should": [
+                    { "terms": { "type": ["module", "class"] } },
+                    { "wildcard": { "file_path.tree": "*#{query}*" } },
+                    { "wildcard": { "file_path.tree_reversed": "*#{query}*" } },
+                  ],
+                }
+              },
+            ]
           }
         }
       }
+
+      # if !@project.current_file&.match?("spec/")
+      #   body[:query][:bool][:must][3][:bool][:must_not] = [
+      #     { "match": { "scope": "let!RspecMetaNode" } },
+      #     { "match": { "scope": "letRspecMetaNode" } },
+      #   ]
+      # end
 
       response = client.search(
         index: @project.index_name,
@@ -271,8 +288,8 @@ module ElasticRubyServer
           "bool": {
             "must": [
               { "match": { "category": "usage" } },
-              { "match": { "line": line }},
-              { "term": { "columns": { "value": character }}},
+              { "match": { "line": line } },
+              { "term": { "columns": { "value": character } } },
               { "term": { "file_path.tree": file_path } }
             ]
           }

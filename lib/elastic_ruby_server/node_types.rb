@@ -30,8 +30,16 @@ module ElasticRubyServer
       if node.ignore?
         NodeTypes::IgnoreDefinition.new(ast)
       else
-        if node.node_type == :send && RailsMethods.include?(node.node_name) || RspecMethods.include?(node.node_name)
+        if node.node_type == :send && RailsMethods.include?(node.node_name)
           meta_node = NodeTypes::MetaNode.new(ast)
+
+          if meta_node.ignore?
+            NodeTypes::IgnoreDefinition.new(ast)
+          else
+            meta_node
+          end
+        elsif node.node_type == :send && RspecMethods.include?(node.node_name)
+          meta_node = NodeTypes::RspecMetaNode.new(ast)
 
           if meta_node.ignore?
             NodeTypes::IgnoreDefinition.new(ast)
@@ -83,11 +91,11 @@ module ElasticRubyServer
             [:RSpec, children[1]]
           else
             # describe "thing" do ...
-            [:describe, children[0]]
+            [children[0]]
           end
         elsif node_name == :context
           text = node.children[0].children[2].children[0]
-          [:context, text]
+          [text]
         else
           [node_name]
         end
@@ -167,7 +175,7 @@ module ElasticRubyServer
       end
     end
 
-    class MetaNode < Assignment;
+    class MetaNode < Assignment
       def ignore?
         node.children[2].nil?
       end
@@ -182,6 +190,16 @@ module ElasticRubyServer
 
       def end_column
         node.children[2].loc.last_column
+      end
+    end
+
+    class RspecMetaNode < MetaNode
+      def scope
+        scope_names
+      end
+
+      def scope_names
+        ["#{node.children[1]}RspecMetaNode", node_name]
       end
     end
 
