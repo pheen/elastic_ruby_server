@@ -71,6 +71,9 @@ module ElasticRubyServer
               },
               {
                 "bool": {
+                  "must_not": [
+                    { "match": { "file_path": "vendor" } }
+                  ],
                   "should": [
                     { "terms": { "type": ["module", "class"] } },
                     { "wildcard": { "file_path.tree": "*#{query}*" } },
