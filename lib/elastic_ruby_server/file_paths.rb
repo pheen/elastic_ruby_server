@@ -24,7 +24,7 @@ module ElasticRubyServer
 
       return unless @git
 
-      status = git.lib.send(:command, "status --short --no-renames --untracked-files")
+      status = @git.lib.send(:command, "status --short --no-renames --untracked-files")
       status.split("\n").each do |line|
         next unless line.end_with?(".rb")
 

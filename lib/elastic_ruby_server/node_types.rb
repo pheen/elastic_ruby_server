@@ -22,41 +22,39 @@ module ElasticRubyServer
     ].freeze
 
     def build_node(ast)
-      return NodeTypes::NodeMissing.new(ast) unless ast.respond_to?(:type)
+      return NodeTypes::NodeMissing.new(ast) if !ast.respond_to?(:type)
 
       node_class_name = "#{ast.type.capitalize}Node"
       node = NodeTypes.const_get(node_class_name).new(ast)
 
-      if node.ignore?
-        NodeTypes::IgnoreDefinition.new(ast)
-      else
-        if node.node_type == :send && RailsMethods.include?(node.node_name)
-          meta_node = NodeTypes::MetaNode.new(ast)
+      return NodeTypes::IgnoreDefinition.new(ast) if node.ignore?
 
-          if meta_node.ignore?
-            NodeTypes::IgnoreDefinition.new(ast)
-          else
-            meta_node
-          end
-        elsif node.node_type == :send && RspecMethods.include?(node.node_name)
-          meta_node = NodeTypes::RspecMetaNode.new(ast)
+      if node.node_type == :send && RailsMethods.include?(node.node_name)
+        meta_node = NodeTypes::MetaNode.new(ast)
 
-          if meta_node.ignore?
-            NodeTypes::IgnoreDefinition.new(ast)
-          else
-            meta_node
-          end
-        elsif node.node_type == :send && AccessorMethods.include?(node.node_name)
-          [*ast.children][2..-1].to_a
-            .select { |child_node| child_node.type == :sym }
-            .each do |child_node|
-              yield(NodeTypes::MetaSymNode.new(child_node))
-            end
-
+        if meta_node.ignore?
           NodeTypes::IgnoreDefinition.new(ast)
         else
-          node
+          meta_node
         end
+      elsif node.node_type == :send && RspecMethods.include?(node.node_name)
+        meta_node = NodeTypes::RspecMetaNode.new(ast)
+
+        if meta_node.ignore?
+          NodeTypes::IgnoreDefinition.new(ast)
+        else
+          meta_node
+        end
+      elsif node.node_type == :send && AccessorMethods.include?(node.node_name)
+        [*ast.children][2..-1].to_a
+          .select { |child_node| child_node.type == :sym }
+          .each do |child_node|
+            yield(NodeTypes::MetaSymNode.new(child_node))
+          end
+
+        NodeTypes::IgnoreDefinition.new(ast)
+      else
+        node
       end
     rescue NameError
       # todo: look for "Missing node: #{node_class_name}"
