@@ -96,7 +96,8 @@ module ElasticRubyServer
         end
 
         if @buffer_synchronization.queue_length == 0
-          sleep(0.33) unless file_changes.first["text"] == "."
+          # sleep(0.33) unless file_changes.first["text"] == "."
+          sleep(0.1)
 
           if @buffer_synchronization.queue_length == 0
             if @last_valid_buffer[file_uri]
