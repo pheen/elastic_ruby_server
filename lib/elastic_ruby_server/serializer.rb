@@ -1,17 +1,20 @@
 # frozen_string_literal: true
 module ElasticRubyServer
   class Serializer
+    attr_reader :deleted
+
     def initialize(project, file_path: nil, content: nil)
       contents = content
       contents ||= ::IO.binread(file_path)
-
-      # binding.pry if file_path.include?("inferred_class.rb")
-
       @ast = Parser::Ruby26.parse(contents)
-    rescue Parser::SyntaxError, Errno::ENOENT => e
-      # All good, the file was probably deleted.
-      Log.info("Failed to read file path: #{file_path}")
+    rescue Parser::SyntaxError => e
       @ast = nil
+    rescue Errno::ENOENT
+      @deleted = true
+    end
+
+    def file_deleted?
+      @deleted || false
     end
 
     def valid_ast?

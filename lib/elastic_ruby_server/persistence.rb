@@ -147,7 +147,7 @@ module ElasticRubyServer
           content: attrs[:content]
         )
 
-        next unless serializer.valid_ast?
+        next unless serializer.file_deleted?
 
         client.delete_by_query(
           index: index_name,
@@ -160,6 +160,8 @@ module ElasticRubyServer
             }
           }
         )
+
+        next unless serializer.valid_ast?
 
         serializer.serialize_nodes.each do |serialized_node|
           document = serialized_node.merge(file_path: attrs[:searchable_file_path])
