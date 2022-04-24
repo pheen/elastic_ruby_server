@@ -12,7 +12,7 @@ module ElasticRubyServer
     def find_each(&block)
       if @git
         find_each_modified_file(&block)
-        find_each_branch_file(&block)
+        find_each_branch_diff_file(&block)
         find_each_committed_file(&block)
       else
         find_each_file(&block)
@@ -33,7 +33,7 @@ module ElasticRubyServer
       end
     end
 
-    def find_each_branch_file(&block)
+    def find_each_branch_diff_file(&block)
       return unless @git
 
       # todo: track branch so we can roll back when switching to master

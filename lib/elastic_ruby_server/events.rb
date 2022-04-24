@@ -52,28 +52,7 @@ module ElasticRubyServer
         publish_diagnostics(file_uri)
         @persistence.reindex(file_uri, wait: false)
 
-        # @latest_modified_files_sync ||= Time.now
-        # @latest_branch_files_sync ||= Time.now
-
-        # if Time.now - @latest_modified_files_sync > 60
-        #   @latest_modified_files_sync = Time.now
-
-        #   file_paths = FilePaths.new(@project.container_workspace_path)
-        #   file_paths.find_each_modified_file do |path|
-        #     @persistence.reindex(path)
-        #   end
-        # end
-
-        # if (Time.now - @latest_branch_files_sync > 60 * 10) &&
-        #   (Time.now - @latest_modified_files_sync > 5) # don't sync modified and branch files at the same time
-
-        #   @latest_branch_files_sync = Time.now
-
-        #   file_paths = FilePaths.new(@project.container_workspace_path)
-        #   file_paths.find_each_branch_file do |path|
-        #     @persistence.reindex(path)
-        #   end
-        # end
+        # reindex_modified_files
       end
     end
 
@@ -255,6 +234,31 @@ module ElasticRubyServer
     end
 
     private
+
+    def reindex_modified_files
+      @latest_modified_files_sync ||= Time.now
+      @latest_branch_files_sync ||= Time.now
+
+      if Time.now - @latest_modified_files_sync > 60 * 2
+        @latest_modified_files_sync = Time.now
+
+        file_paths = FilePaths.new(@project.container_workspace_path)
+        file_paths.find_each_modified_file do |path|
+          @persistence.reindex(path)
+        end
+      end
+
+      if (Time.now - @latest_branch_files_sync > 60 * 20) &&
+          (Time.now - @latest_modified_files_sync > 5) # don't sync modified and branch files at the same time
+
+        @latest_branch_files_sync = Time.now
+
+        file_paths = FilePaths.new(@project.container_workspace_path)
+        file_paths.find_each_branch_diff_file do |path|
+          @persistence.reindex(path)
+        end
+      end
+    end
 
     def publish_diagnostics(uri)
       diagnostics = []

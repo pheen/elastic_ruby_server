@@ -57,7 +57,7 @@ module ElasticRubyServer
         node
       end
     rescue NameError
-      # todo: look for "Missing node: #{node_class_name}"
+      # Log.debug("Missing node: #{node_class_name}")
       NodeTypes::NodeMissing.new(ast)
     end
     module_function :build_node
