@@ -35,6 +35,7 @@ module ElasticRubyServer
       Log.debug(`/app/exe/es_check.sh`)
 
       queue_task(worker: @local_synchronization) do
+        reindex_modified_files
         @persistence.index_all(preserve: true)
       end
     end
@@ -51,15 +52,15 @@ module ElasticRubyServer
 
         publish_diagnostics(file_uri)
         @persistence.reindex(file_uri, wait: false)
-
-        # reindex_modified_files
       end
     end
 
     def on_workspace_didChangeWatchedFiles(params) # {"changes"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/extensions/rack_session_id.rb", "type"=>3}, {"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/app/services/foundations/lock.rb", "type"=>3}, ...
       queue_task(worker: @global_synchronization) do
         file_uris = params["changes"].map { |change| change["uri"] }
+
         @persistence.reindex(*file_uris, wait: false)
+        reindex_modified_files
       end
     end
 
