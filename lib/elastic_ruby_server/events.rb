@@ -35,7 +35,7 @@ module ElasticRubyServer
       Log.debug(`/app/exe/es_check.sh`)
 
       queue_task(worker: @local_synchronization) do
-        reindex_modified_files
+        # reindex_modified_files
         @persistence.index_all(preserve: true)
       end
     end
@@ -60,7 +60,7 @@ module ElasticRubyServer
         file_uris = params["changes"].map { |change| change["uri"] }
 
         @persistence.reindex(*file_uris, wait: false)
-        reindex_modified_files
+        # reindex_modified_files
       end
     end
 
