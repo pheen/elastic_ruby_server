@@ -223,7 +223,7 @@ module ElasticRubyServer
           content: attrs[:content]
         )
 
-        next unless serializer.file_deleted?
+        # next unless serializer.file_deleted?
 
         client.delete_by_query(
           index: index_name,
