@@ -7,7 +7,7 @@ module ElasticRubyServer
         definitionProvider: true,
         documentHighlightProvider: true,
         documentRangeFormattingProvider: true,
-        documentSymbolProvider: true,
+        # documentSymbolProvider: true,
         referencesProvider: true,
         renameProvider: true,
         textDocumentSync: {
