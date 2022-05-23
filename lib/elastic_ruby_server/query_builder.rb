@@ -22,7 +22,9 @@ module ElasticRubyServer
         should_matches = []
 
         source.fetch("scope", []).each do |term|
-          should_matches << { "match": { "scope": term } }
+          Array(term).each do |t|
+            should_matches << { "match": { "scope": t } }
+          end
         end
 
         if restricted_types(type).any?
@@ -33,13 +35,18 @@ module ElasticRubyServer
           must_matches << file_path_query(file_path)
 
           source.fetch("method_scope", []).each do |term|
-            must_matches << { "match": { "method_scope": term } }
+
+            Array(term).each do |t|
+              must_matches << { "match": { "method_scope": t }}
+            end
           end
         else
           should_matches << file_path_query(file_path)
 
           source.fetch("method_scope", []).each do |term|
-            should_matches << { "match": { "method_scope": term } }
+            Array(term).each do |t|
+              should_matches << { "match": { "method_scope": t }}
+            end
           end
         end
 

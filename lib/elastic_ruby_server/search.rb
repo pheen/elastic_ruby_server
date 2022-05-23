@@ -226,16 +226,22 @@ module ElasticRubyServer
       }
 
       source.fetch("scope", []).each do |scope_name|
-        query[:query][:bool][:should] << { "match": { "scope": scope_name } }
+        Array(scope_name).each do |name|
+          query[:query][:bool][:should] << { "match": { "scope": name } }
+        end
       end
 
       if ["arg", "lvar"].include?(type)
         source.fetch("method_scope", []).each do |scope_name|
-          query[:query][:bool][:must] << { "match": { "method_scope": scope_name } }
+          Array(scope_name).each do |name|
+            query[:query][:bool][:must] << { "match": { "method_scope": name } }
+          end
         end
       else
         source.fetch("method_scope", []).each do |scope_name|
-          query[:query][:bool][:should] << { "match": { "method_scope": scope_name } }
+          Array(scope_name).each do |name|
+            query[:query][:bool][:should] << { "match": { "method_scope": name } }
+          end
         end
       end
 
@@ -309,6 +315,10 @@ module ElasticRubyServer
 
     def query_assignment(file_path, usage)
       query = QueryBuilder.assignment_query(file_path, usage)
+
+      Log.debug("query_assignemnt:")
+      Log.debug(query)
+
       results = client.search(
         index: @project.index_name,
         body: query,
