@@ -84,10 +84,10 @@ module ElasticRubyServer
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       begin
-        # rubocop_output, _err = cmd.run("rubocop-daemon exec -- -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
-        # rubocop_output, _err = cmd.run("rubocop -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
-        rubocop_output, _err = cmd.run("/usr/local/bin/rubocop-daemon-wrapper/rubocop -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
-      rescue TTY::Command::ExitError
+        rubocop_output, _err = cmd.run("/usr/local/bin/rubocop-daemon-wrapper/rubocop -s #{path} --lint --fix-layout --auto-correct --format quiet --fail-level fatal", input: contents_with_hash)
+      rescue TTY::Command::ExitError => e
+        Log.debug("Rubocop Formatting Error:")
+        Log.debug(e)
       end
 
       end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)

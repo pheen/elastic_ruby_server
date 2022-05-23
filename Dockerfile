@@ -79,7 +79,7 @@ ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}
 
 RUN gem update bundler
 
-RUN apt-get install -y git make g++ libcurl4 libcurl4-openssl-dev
+RUN apt-get install -y git make g++ libcurl4 libcurl4-openssl-dev netcat
 
 WORKDIR /app
 
@@ -107,20 +107,19 @@ RUN bundle install
 # RUN chown -R default:elasticsearch /usr/share/elasticsearch/
 # RUN chown -R elasticsearch /usr/share/elasticsearch/
 
-RUN chown -R elasticsearch /usr/share/elasticsearch/
-RUN chown -R elasticsearch /usr/share/elasticsearch/data
-RUN chown -R elasticsearch /usr/share/elasticsearch/logs
-RUN chown -R elasticsearch /usr/share/elasticsearch/config
-RUN chown -R elasticsearch /usr/share/elasticsearch/config/scripts
-RUN chown -R elasticsearch /usr/share/elasticsearch/tmp
-RUN chown -R elasticsearch /usr/share/elasticsearch/plugins
-RUN mkdir -p /usr/share/elasticsearch/data/
-RUN mkdir -p /usr/share/elasticsearch/data/nodes/
-RUN mkdir -p /usr/share/elasticsearch/data/nodes/0/
-RUN chown -R elasticsearch /usr/share/elasticsearch/data/nodes/0/
-RUN chown -R elasticsearch /usr/share/elasticsearch/data/nodes/0/
-
-RUN mkdir -p /usr/share/elasticsearch/data/watchman
+RUN chown -R elasticsearch /usr/share/elasticsearch/ \
+    && chown -R elasticsearch /usr/share/elasticsearch/data \
+    && chown -R elasticsearch /usr/share/elasticsearch/logs \
+    && chown -R elasticsearch /usr/share/elasticsearch/config \
+    && chown -R elasticsearch /usr/share/elasticsearch/config/scripts \
+    && chown -R elasticsearch /usr/share/elasticsearch/tmp \
+    && chown -R elasticsearch /usr/share/elasticsearch/plugins \
+    && mkdir -p /usr/share/elasticsearch/data/ \
+    && mkdir -p /usr/share/elasticsearch/data/nodes/ \
+    && mkdir -p /usr/share/elasticsearch/data/nodes/0/ \
+    && chown -R elasticsearch /usr/share/elasticsearch/data/nodes/0/ \
+    && chown -R elasticsearch /usr/share/elasticsearch/data/nodes/0/ \
+    && mkdir -p /usr/share/elasticsearch/data/watchman
 
 COPY config/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 COPY config/override.conf /etc/systemd/system/elasticsearch.service.d/override.conf

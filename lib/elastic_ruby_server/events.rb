@@ -235,12 +235,30 @@ module ElasticRubyServer
     def publish_diagnostics(uri)
       diagnostics = []
       path = Utils.readable_path(@project, uri)
-      rubocop_config = Utils.readable_path(@project, "/.rubocop.yml")
+      rubocop_config = Utils.readable_path(@project, ".rubocop.yml")
       rubocop_config ||= "/app/.rubocop.yml"
+      file_buffer = @open_files_buffer[uri]
 
-      results = JSON.parse(
-        `rubocop-daemon exec #{path} -- --config #{rubocop_config} --format json `
-      )
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      begin
+        cmd = TTY::Command.new(printer: :null)
+        results, _err =
+          cmd.run(
+            "/usr/local/bin/rubocop-daemon-wrapper/rubocop -s #{path} --config #{rubocop_config} --format json --fail-level fatal",
+            input: file_buffer.text
+          )
+      rescue TTY::Command::ExitError => e
+        Log.debug("Rubocop Diagnostics Error:")
+        Log.debug(e)
+      end
+
+      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      elapsed = end_time - start_time
+
+      Log.debug("Rubocop Diagnostics Elapsed time: #{elapsed} seconds")
+
+      results = JSON.parse(results)
       offenses = results["files"].first["offenses"]
 
       offenses.each do |offense|
