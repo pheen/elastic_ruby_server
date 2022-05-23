@@ -6,7 +6,7 @@ module ElasticRubyServer
     subject { described_class.new(project) }
 
     describe "arguments" do
-      let(:file_path) { "/arguments.rb" }
+      let(:file_path) { "arguments.rb" }
 
       it "multiple arg assignment" do
         expect(asgn_doc("arg1")).to match_doc(

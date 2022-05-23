@@ -19,20 +19,19 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "elasticsearch", "< 7.14"
-  spec.add_dependency "patron"
-  spec.add_dependency "parser"
-  spec.add_dependency "git"
   spec.add_dependency "concurrent-ruby"
-  spec.add_dependency "tty-command"
-  spec.add_dependency "rubocop"
-  spec.add_dependency "rubocop-rails"
+  spec.add_dependency "elasticsearch", "< 7.14"
+  spec.add_dependency "parser"
+  spec.add_dependency "patron"
   spec.add_dependency "rubocop-daemon"
+  spec.add_dependency "rubocop-rails"
+  spec.add_dependency "rubocop"
+  spec.add_dependency "tty-command"
 
-  spec.add_development_dependency "rspec"
-  spec.add_development_dependency "fuubar"
-  spec.add_development_dependency "pry"
-  spec.add_development_dependency "pry-byebug"
   spec.add_development_dependency "colorize"
+  spec.add_development_dependency "fuubar"
   spec.add_development_dependency "hashdiff"
+  spec.add_development_dependency "pry-byebug"
+  spec.add_development_dependency "pry"
+  spec.add_development_dependency "rspec"
 end

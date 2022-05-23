@@ -3,90 +3,77 @@ module ElasticRubyServer
   class FilePaths
     def initialize(dir_path)
       @dir_path = dir_path
-
-      Log.debug("dir_path: #{dir_path}")
-
-      @git = Dir.exists?("#{dir_path}/.git") ? Git.open(@dir_path) : nil
     end
 
-    def find_each(&block)
-      if @git
-        find_each_modified_file(&block)
-        find_each_branch_diff_file(&block)
-        find_each_committed_file(&block)
-      else
-        find_each_file(&block)
-      end
-    end
+    def find_each_modified_file(since:, &block)
+      start_time = Time.now
+      Log.debug("Watching project...")
 
-    def find_each_modified_file(&block)
-      # todo: track known files and subtract current moffieied for delted
+      watch_project
 
-      return unless @git
+      Log.debug("Watching project finished in #{Time.now - start_time} seconds")
 
-      status = @git.lib.send(:command, "status --short --no-renames --untracked-files")
-      status.split("\n").each do |line|
-        next unless line.end_with?(".rb")
+      start_time = Time.now
+      Log.debug("Querying paths...")
 
-        path = line[3..-1] # remove git notation from the beginning of the line
-        block.call("#{@dir_path}/#{path}")
-      end
-    end
+      since = [(since.to_i - 10), 0].max
 
-    def find_each_branch_diff_file(&block)
-      return unless @git
+      base_path = ENV["DOCKER"] ? "/usr/share/elasticsearch/data/watchman" : File.expand_path("./tmp")
+      cmd = TTY::Command.new(printer: :null)
+      run_cmd =  <<~CMD
+        watchman --no-pretty --log-level=0 --no-save-state -j <<-EOT
+          ["query", "#{@dir_path}", {
+            "suffix": "rb",
+            "expression": [
+              "allof",
+              ["type", "f"],
+              ["since", #{since}, "ctime"]
+            ],
+            "fields": ["name"],
+            "sync_timeout": 600000
+          }]
+        EOT
+      CMD
 
-      # todo: track branch so we can roll back when switching to master
+      Log.debug("Running watchman command:")
+      Log.debug(run_cmd)
 
-      begin
-        @git.diff("master", "head").each do |status_file|
-          block.call("#{@dir_path}/#{status_file.path}")
+      output, _err = cmd.run(run_cmd)
+
+      Log.debug("Querying paths finished in #{Time.now - start_time} seconds")
+
+      files = JSON.parse(output)["files"]
+      total_count = files.count
+      current_count = 0
+
+      files.each do |file_name|
+        block.call(file_name)
+
+        current_count += 1
+        progress = (current_count / total_count.to_f) * 100
+
+        if (progress == 100) || (rand > 0.98)
+          Log.debug("Progress: #{progress}%")
         end
-      rescue Git::GitExecuteError
       end
 
-      begin
-        @git.diff("main", "head").each do |status_file|
-          block.call("#{@dir_path}/#{status_file.path}")
-        end
-      rescue Git::GitExecuteError
-      end
+      files
+    rescue TTY::Command::ExitError => e
+      Log.debug("Watchman command failed:")
+      Log.debug(e)
     end
 
-    private
+    def watch_project
+      base_path = ENV["DOCKER"] ? "/usr/share/elasticsearch/data/watchman" : File.expand_path("./tmp")
+      cmd = TTY::Command.new(printer: :null)
+      run_cmd = <<~CMD
+        watchman --no-pretty --log-level=0 --no-save-state watch-project "#{@dir_path}"
+      CMD
 
-    def find_each_committed_file(&block)
-      @git.ls_files.keys.each do |path|
-        next unless path.end_with?(".rb")
-        block.call("#{@dir_path}/#{path}")
-      end
-    end
+      Log.debug("Running watchman command:")
+      Log.debug(run_cmd)
 
-    def git_ignored_path?(path)
-      return false if @gitignore_missing
-
-      git_ignore.each_line do |line|
-        pattern = line[0..-2]
-        return true if File.fnmatch?("./#{pattern}*", path, File::FNM_DOTMATCH)
-      end
-
-      false
-    rescue Errno::ENOENT
-      @gitignore_missing = true
-      false
-    end
-
-    def git_ignore
-      @git_ignore ||= File.open("#{@dir_path}/.gitignore").read
-    end
-
-    def find_each_file(&block)
-      Find.find(@dir_path) do |file_path|
-        next Find.prune if git_ignored_path?(file_path)
-        next unless File.fnmatch?("*.rb", file_path, File::FNM_DOTMATCH)
-
-        block.call(file_path)
-      end
+      output, _err = cmd.run(run_cmd)
     end
   end
 end

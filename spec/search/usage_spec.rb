@@ -7,7 +7,7 @@ module ElasticRubyServer
 
     describe "usage lookup" do
       context "assignment" do
-        let(:file_path) { "/usage/assignment.rb" }
+        let(:file_path) { "usage/assignment.rb" }
 
         it "finds variables when included in an array" do
           expect(usage_doc(line: 4, col: 17)).to match_doc(
@@ -34,7 +34,7 @@ module ElasticRubyServer
       end
 
       context "methods chains" do
-        let(:file_path) { "/usage/method_chains.rb" }
+        let(:file_path) { "usage/method_chains.rb" }
 
         it "finds multiple usages per line" do
           expect(usage_doc(line: 3, col: 10)).to match_doc(
@@ -84,7 +84,7 @@ module ElasticRubyServer
       end
 
       context "namespaced constants" do
-        let(:file_path) { "/usage/namespaced_constants.rb" }
+        let(:file_path) { "usage/namespaced_constants.rb" }
 
         it "finds each usage" do
           expect(usage_doc(line: 10, col: 5)).to match_doc(

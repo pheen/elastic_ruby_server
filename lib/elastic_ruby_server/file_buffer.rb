@@ -76,16 +76,24 @@ module ElasticRubyServer
       lines.insert(range["end"]["line"] + 2, "#{space}# #{range_hash}closing\n")
 
       contents_with_hash = lines.join
-      file_name = "file_buffer_#{range_hash}.rb"
 
       cmd = TTY::Command.new(printer: :null)
-      path = file_name
+      path = "rubocop_config_location.rb"
       path = "/app/#{path}" if ENV["DOCKER"]
 
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
       begin
-        rubocop_output, _err = cmd.run("rubocop-daemon exec -- -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
+        # rubocop_output, _err = cmd.run("rubocop-daemon exec -- -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
+        # rubocop_output, _err = cmd.run("rubocop -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
+        rubocop_output, _err = cmd.run("/usr/local/bin/rubocop-daemon-wrapper/rubocop -s #{path} -A --format quiet --fail-level error", input: contents_with_hash)
       rescue TTY::Command::ExitError
       end
+
+      end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      elapsed = end_time - start_time
+
+      Log.debug("Formatting Elapsed time: #{elapsed} seconds")
 
       rubocop_output_lines = rubocop_output.lines
       content_divider_index = rubocop_output_lines.find_index { |l| l == "====================\n" }

@@ -10,7 +10,11 @@ module ElasticRubyServer
         documentSymbolProvider: true,
         referencesProvider: true,
         renameProvider: true,
-        textDocumentSync: 2,
+        textDocumentSync: {
+          openClose: true,
+          save: true,
+          change: 2,
+        },
         workspaceSymbolProvider: true,
         # Not implemented:
         # codeActionProvider: false,
@@ -130,13 +134,13 @@ module ElasticRubyServer
         result: result
       })
 
-      # Log.debug("Sending response:")
+      Log.debug("Sending response:")
 
-      # if json.bytesize < 1000
-      #   Log.debug(response)
-      # else
-      #   Log.debug("Large json blob response")
-      # end
+      if response.bytesize < 1000
+        Log.debug(response)
+      else
+        Log.debug("Large json blob response")
+      end
 
       @conn.write("Content-Length: #{response.length}\r\n")
       @conn.write("\r\n")

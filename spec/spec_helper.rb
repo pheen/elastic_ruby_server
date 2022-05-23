@@ -8,11 +8,9 @@ require "./spec/test_helpers.rb"
 
 RSpec.configure do |config|
   config.before(:suite) do
-    persistence.delete_index
+    Dir.glob('./tmp/last_sync*').each { |file| File.delete(file)}
 
-    thread = persistence.index_all(preserve: false)
-    thread.join
-
+    persistence.reindex_all_files
     client.indices.refresh
   end
 

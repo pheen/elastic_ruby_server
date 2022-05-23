@@ -7,7 +7,7 @@ response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")
 if [[ "$response" -ne "200" ]]; then # only start if ES isn't already running
     >&2 echo "Starting Elasticsearch..."
 
-    MAX_LOCKED_MEMORY=unlimited ES_JAVA_OPTS="-Xms512m -Xmx512m" elasticsearch -d -p PID
+    MAX_LOCKED_MEMORY=unlimited ES_JAVA_OPTS="-Xms512m -Xmx512m" runuser -u elasticsearch -- elasticsearch -d -p PID
 
     status=$?
     if [ $status -ne 0 ]; then

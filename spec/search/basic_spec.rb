@@ -6,7 +6,7 @@ module ElasticRubyServer
     subject { described_class.new(project) }
 
     describe "basic" do
-      let(:file_path) { "/basic.rb" }
+      let(:file_path) { "basic.rb" }
 
       it "class assignment" do
         expect(asgn_doc("Basic")).to match_doc(

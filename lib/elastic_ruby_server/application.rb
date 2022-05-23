@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 require "concurrent-ruby"
 require "elasticsearch"
-require "git"
 require "parser/ruby26"
 require "patron"
 require "tty-command"

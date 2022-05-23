@@ -35,14 +35,14 @@ module ElasticRubyServer
       Log.debug(`/app/exe/es_check.sh`)
 
       queue_task(worker: @local_synchronization) do
-        reindex_modified_files
-        @persistence.index_all(preserve: true)
+        @persistence.create_index
+        @persistence.reindex_modified_files(force: true)
       end
     end
 
     def on_workspace_reindex(params)
       queue_task(worker: @local_synchronization) do
-        @persistence.index_all(preserve: false)
+        @persistence.reindex_all_files
       end
     end
 
@@ -51,16 +51,9 @@ module ElasticRubyServer
         file_uri = params.dig("textDocument", "uri")
 
         publish_diagnostics(file_uri)
-        @persistence.reindex(file_uri, wait: false)
-      end
-    end
 
-    def on_workspace_didChangeWatchedFiles(params) # {"changes"=>[{"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/extensions/rack_session_id.rb", "type"=>3}, {"uri"=>"file:///Users/joelkorpela/clio/themis/components/foundations/app/services/foundations/lock.rb", "type"=>3}, ...
-      queue_task(worker: @global_synchronization) do
-        file_uris = params["changes"].map { |change| change["uri"] }
-
-        @persistence.reindex(*file_uris, wait: false)
-        reindex_modified_files
+        @persistence.reindex(file_uri)
+        @persistence.reindex_modified_files
       end
     end
 
@@ -73,7 +66,8 @@ module ElasticRubyServer
         @open_files_buffer[file_uri] = file_buffer
 
         publish_diagnostics(file_uri)
-        @persistence.reindex(file_uri, content: { file_uri => file_content }, wait: false)
+        @persistence.reindex(file_uri, content: { file_uri => file_content })
+        @persistence.reindex_modified_files
       end
     end
 
@@ -82,6 +76,7 @@ module ElasticRubyServer
         file_uri = params.dig("textDocument", "uri")
         @open_files_buffer.delete(file_uri)
         @server.publish_diagnostics(file_uri, [])
+        @persistence.reindex_modified_files
       end
     end
 
@@ -190,14 +185,15 @@ module ElasticRubyServer
       file_uri = params.dig("textDocument", "uri")
       cursor = params["position"]
 
-      references = @search.find_references(file_uri, cursor).map do |doc|
-        SymbolLocation.build(
-          source: doc["_source"],
-          workspace_path: @project.host_workspace_path
-        ).merge(
-          type: doc["_source"]["type"]
-        )
-      end
+      references =
+        @search.find_references(file_uri, cursor).map do |doc|
+          SymbolLocation.build(
+            source: doc["_source"],
+            workspace_path: @project.host_workspace_path
+          ).merge(
+            type: doc["_source"]["type"]
+          )
+        end
 
       references_by_uri = references.group_by { |reference| reference[:uri] }
       references_by_uri = references_by_uri.map do |uri, edits|
@@ -236,31 +232,6 @@ module ElasticRubyServer
 
     private
 
-    def reindex_modified_files
-      @latest_modified_files_sync ||= Time.now
-      @latest_branch_files_sync ||= Time.now
-
-      if Time.now - @latest_modified_files_sync > 60 * 2
-        @latest_modified_files_sync = Time.now
-
-        file_paths = FilePaths.new(@project.container_workspace_path)
-        file_paths.find_each_modified_file do |path|
-          @persistence.reindex(path)
-        end
-      end
-
-      if (Time.now - @latest_branch_files_sync > 60 * 20) &&
-          (Time.now - @latest_modified_files_sync > 5) # don't sync modified and branch files at the same time
-
-        @latest_branch_files_sync = Time.now
-
-        file_paths = FilePaths.new(@project.container_workspace_path)
-        file_paths.find_each_branch_diff_file do |path|
-          @persistence.reindex(path)
-        end
-      end
-    end
-
     def publish_diagnostics(uri)
       diagnostics = []
       path = Utils.readable_path(@project, uri)
@@ -292,6 +263,8 @@ module ElasticRubyServer
       end
 
       @server.publish_diagnostics(uri, diagnostics)
+    rescue JSON::ParserError
+      # todo: send error about bad rubocop config to client
     end
 
     def diagnostic_severity(rubocop_severity)

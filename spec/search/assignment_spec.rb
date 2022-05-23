@@ -6,7 +6,7 @@ module ElasticRubyServer
     subject { described_class.new(project) }
 
     describe "assignment lookup" do
-      let(:file_path) { "/assignment" }
+      let(:file_path) { "assignment" }
 
       it "prioritizes lvasgn based on scope" do
         scope1 = ["Assignment", "duplicate_lvar1"]

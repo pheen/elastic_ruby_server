@@ -15,7 +15,7 @@ module ElasticRubyServer
     end
 
     def self.readable_path(project, path)
-      "#{project.container_workspace_path}#{searchable_path(project, path)}"
+      "#{project.container_workspace_path}/#{searchable_path(project, path)}"
     end
   end
 end

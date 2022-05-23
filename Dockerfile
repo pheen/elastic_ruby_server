@@ -1,8 +1,11 @@
 # docker build -t elastic_ruby_server .
-FROM ruby:3.0-alpine
+FROM ruby:3.0
 LABEL maintainer="syright@gmail.com"
 
-RUN apk add --no-cache openjdk11-jre-headless su-exec
+RUN apt-get update -y
+RUN apt-get install -y openjdk-11-jre-headless wget curl git
+
+WORKDIR /tmp/
 
 ENV VERSION 7.9.3
 ENV DOCKER true
@@ -14,9 +17,7 @@ ENV EXPECTED_SHA_URL "${DOWNLOAD_URL}/elasticsearch-oss-${VERSION}-no-jdk-linux-
 ENV ES_TARBALL_SHA "679d02f2576aa04aefee6ab1b8922d20d9fc1606c2454b32b52e7377187435da50566c9000565df8496ae69d0882724fbf2877b8253bd6036c06367e854c55f6"
 ENV GPG_KEY "46095ACC8548582C1A2699A9D27D666CD88E42B4"
 
-RUN apk add --no-cache bash
-RUN apk add --no-cache -t .build-deps wget ca-certificates gnupg openssl \
-  && set -ex \
+RUN set -ex \
   && cd /tmp \
   && echo "===> Install Elasticsearch..." \
   && wget --progress=bar:force -O elasticsearch.tar.gz "$ES_TARBAL"; \
@@ -33,9 +34,11 @@ RUN apk add --no-cache -t .build-deps wget ca-certificates gnupg openssl \
   rm -rf "$GNUPGHOME" elasticsearch.tar.gz.asc || true; \
   fi; \
   tar -xf elasticsearch.tar.gz \
-  && ls -lah \
-  && mv elasticsearch-$VERSION /usr/share/elasticsearch \
-  && adduser -D -h /usr/share/elasticsearch elasticsearch \
+  && ls -lah
+
+RUN mv elasticsearch-$VERSION /usr/share/elasticsearch \
+  # && adduser -D -h /usr/share/elasticsearch elasticsearch \
+  && useradd -m -d /usr/share/elasticsearch elasticsearch \
   && echo "===> Creating Elasticsearch Paths..." \
   && for path in \
   /usr/share/elasticsearch/data \
@@ -46,21 +49,9 @@ RUN apk add --no-cache -t .build-deps wget ca-certificates gnupg openssl \
   /usr/share/elasticsearch/plugins \
   ; do \
   mkdir -p "$path"; \
-  chown -R elasticsearch:elasticsearch "$path"; \
+  chown -R elasticsearch "$path"; \
   done \
-  && rm -rf /tmp/* /usr/share/elasticsearch/jdk \
-  && apk del --purge .build-deps
-
-# TODO: remove this (it removes X-Pack ML so it works on Alpine)
-RUN rm -rf /usr/share/elasticsearch/modules/x-pack-ml/platform/linux-x86_64
-
-# COPY config/elastic /usr/share/elasticsearch/config
-# COPY config/logrotate /etc/logrotate.d/elasticsearch
-# COPY elastic-entrypoint.sh /
-# RUN chmod +x /elastic-entrypoint.sh
-# COPY docker-healthcheck /usr/local/bin/
-
-# WORKDIR /usr/share/elasticsearch
+  && rm -rf /tmp/* /usr/share/elasticsearch/jdk
 
 ENV JAVA_HOME /usr
 ENV PATH /usr/share/elasticsearch/bin:$PATH
@@ -68,25 +59,27 @@ ENV ES_TMPDIR /usr/share/elasticsearch/tmp
 
 VOLUME ["/usr/share/elasticsearch/data"]
 
-# add new user
-ARG USER=default
-ENV HOME /home/$USER
+RUN useradd -m -s /bin/bash linuxbrew
+RUN echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
+RUN su - linuxbrew -c 'mkdir ~/.linuxbrew'
 
-RUN apk add sudo
+run apt-get install -y build-essential procps curl file git
 
-RUN adduser -D default \
-        && echo "default ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/default \
-        && chmod 0440 /etc/sudoers.d/default
+USER linuxbrew
+
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+RUN /home/linuxbrew/.linuxbrew/bin/brew install watchman
+
+USER root
+
+ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 ################################################################
 ################################################################
 
 RUN gem update bundler
 
-RUN apk update && apk upgrade
-# curl-dev needed for patron
-RUN apk add --update curl-dev
-RUN apk add git curl make g++
+RUN apt-get install -y git make g++ libcurl4 libcurl4-openssl-dev
 
 WORKDIR /app
 
@@ -99,18 +92,35 @@ COPY lib/elastic_ruby_server/version.rb lib/elastic_ruby_server/version.rb
 
 RUN bundle install -j 8
 
-RUN curl https://raw.githubusercontent.com/fohte/rubocop-daemon/master/bin/rubocop-daemon-wrapper -o /tmp/rubocop-daemon-wrapper
+RUN curl https://gist.githubusercontent.com/pheen/3c660551afee8c88cd4d77d302f85d2a/raw/f30411da34a6f5e60cd0a2080517aa8ed35f8566/rubocop-daemon-wrapper -o /tmp/rubocop-daemon-wrapper
 RUN mkdir -p /usr/local/bin/rubocop-daemon-wrapper
 RUN mv /tmp/rubocop-daemon-wrapper /usr/local/bin/rubocop-daemon-wrapper/rubocop
 RUN chmod +x /usr/local/bin/rubocop-daemon-wrapper/rubocop
 
+ENV RUBOCOP_DAEMON_USE_BUNDLER true
 ENV PATH /usr/local/bin/rubocop-daemon-wrapper:$PATH
 
 COPY . ./
 
-USER default
+RUN bundle install
 
-RUN sudo chown -R default:elasticsearch /usr/share/elasticsearch/
+# RUN chown -R default:elasticsearch /usr/share/elasticsearch/
+# RUN chown -R elasticsearch /usr/share/elasticsearch/
+
+RUN chown -R elasticsearch /usr/share/elasticsearch/
+RUN chown -R elasticsearch /usr/share/elasticsearch/data
+RUN chown -R elasticsearch /usr/share/elasticsearch/logs
+RUN chown -R elasticsearch /usr/share/elasticsearch/config
+RUN chown -R elasticsearch /usr/share/elasticsearch/config/scripts
+RUN chown -R elasticsearch /usr/share/elasticsearch/tmp
+RUN chown -R elasticsearch /usr/share/elasticsearch/plugins
+RUN mkdir -p /usr/share/elasticsearch/data/
+RUN mkdir -p /usr/share/elasticsearch/data/nodes/
+RUN mkdir -p /usr/share/elasticsearch/data/nodes/0/
+RUN chown -R elasticsearch /usr/share/elasticsearch/data/nodes/0/
+RUN chown -R elasticsearch /usr/share/elasticsearch/data/nodes/0/
+
+RUN mkdir -p /usr/share/elasticsearch/data/watchman
 
 COPY config/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 COPY config/override.conf /etc/systemd/system/elasticsearch.service.d/override.conf

@@ -10,11 +10,8 @@ module ElasticRubyServer
     rescue Parser::SyntaxError => e
       @ast = nil
     rescue Errno::ENOENT
-      @deleted = true
-    end
-
-    def file_deleted?
-      @deleted || false
+      @ast = nil
+      # @deleted = true
     end
 
     def valid_ast?

@@ -24,7 +24,7 @@ module ElasticRubyServer
     end
 
     describe "nested constant names" do
-      let(:file_path) { "/definitions.rb" }
+      let(:file_path) { "definitions.rb" }
 
       it "class usage" do
         expect(find_definition("Layer1", 5, 9)).to match_definition(line: 2, start: 10, end: 16)
@@ -47,7 +47,7 @@ module ElasticRubyServer
     end
 
     describe "methods" do
-      let(:file_path) { "/definitions.rb" }
+      let(:file_path) { "definitions.rb" }
 
       it "class methods" do
         expect(find_definition("method1", 21, 16)).to match_definition(line: 17, start: 12, end: 19)
@@ -59,7 +59,7 @@ module ElasticRubyServer
     end
 
     describe "wut" do
-      let(:file_path) { "/definitions/wut.rb" }
+      let(:file_path) { "definitions/wut.rb" }
 
       it "parses correctly" do
         expect(find_definition("var1", 4, 5)).to match_definition(line: 3, start: 5, end: 9)
@@ -72,7 +72,7 @@ module ElasticRubyServer
     end
 
     describe "ruby" do
-      let(:file_path) { "/definitions/ruby.rb" }
+      let(:file_path) { "definitions/ruby.rb" }
 
       it "accessors" do
         expect(find_definition("method1", 8,  5)).to match_definition(line: 2, start: 17, end: 25)
@@ -84,7 +84,7 @@ module ElasticRubyServer
     end
 
     describe "rails" do
-      let(:file_path) { "/definitions/rails.rb" }
+      let(:file_path) { "definitions/rails.rb" }
 
       it "understands rails helpers" do
         expect(find_definition("belongs_to_assoc", 9, 5)).to match_definition(line: 2, start: 14, end: 31)
@@ -96,7 +96,7 @@ module ElasticRubyServer
     end
 
     describe "rspec" do
-      let(:file_path) { "/definitions/rspec.rb" }
+      let(:file_path) { "definitions/rspec.rb" }
 
       it "finds let and let! definitions" do
         expect(find_definition("let_bang", 7, 7)).to match_definition(line: 2, start: 8, end: 17)

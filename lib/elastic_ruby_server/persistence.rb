@@ -83,175 +83,122 @@ module ElasticRubyServer
       client.indices.delete(index: index_name)
     end
 
-    def delete_records
-      client.delete_by_query(
-        index: index_name,
-        body: {
-          query: {
-            match: {
-              _index: index_name
-            }
-          }
-        }
-      )
-    end
-
-    def index_all(preserve: true)
-      return if client.indices.exists?(index: index_name) && preserve
-
-      Log.info("Starting to index workspace. Elasticsearch index: #{index_name}")
-
+    def reindex_all_files
+      Log.debug("Reindex starting!")
       start_time = Time.now
 
       delete_index
       create_index
 
-      Log.info("container_workspace_path: #{@container_workspace_path}")
+      base_sync_path = ENV["DOCKER"] ? "/usr/share/elasticsearch/data" : File.expand_path("./tmp")
+      last_sync_path = "#{base_sync_path}/last_sync_#{@project.index_name}"
 
-      FilePaths.new(@container_workspace_path).find_each do |file_path|
-        searchable_file_path = Utils.searchable_path(@project, file_path)
-        readable_file_path = Utils.readable_path(@project, file_path)
-        serializer = Serializer.new(@project, file_path: readable_file_path)
+      @latest_modified_files_sync = Time.now
+      File.write(last_sync_path, @latest_modified_files_sync.to_i)
 
-        serializer.serialize_nodes.each do |hash|
-          document = hash.merge(file_path: searchable_file_path)
-          es_client.queue([{ index: { _index: index_name }}, document])
-        end
-      rescue => e
-        Log.error("Failed to serialize file: #{searchable_file_path}")
-        Log.error(e)
-      end
-
-      Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
-
-      es_client.flush(refresh_index: index_name)
-    end
-
-    def index_all_gems(preserve: true)
-      # gems_index_name = @project.gems_index_name
-
-      # return if client.indices.exists?(index: gems_index_name) && preserve
-
-      # Log.info("Starting to index gems. Elasticsearch index: #{gems_index_name}")
-
-      # start_time = Time.now
-
-      # # delete_index(gems_index_name)
-      # # create_index(gems_index_name)
-
-      # Log.info("gems_index_name: #{gems_index_name}")
-
-      # FilePaths.new(@project.gems_container_root_path).find_each_gem_directory do |dir_path|
-      #   # delete all docs for this dir
-      #   FilePaths.new(dir_path).each_file do |file_path|
-      #     ## stopped here
-
-      #     begin
-      #       searchable_file_path = Utils.searchable_path(@project, file_path)
-      #       readable_file_path = Utils.readable_path(@project, file_path)
-      #       serializer = Serializer.new(@project, file_path: readable_file_path)
-
-      #       serializer.serialize_nodes.each do |hash|
-      #         document = hash.merge(file_path: searchable_file_path)
-      #         es_client.queue([{ index: { _index: index_name } }, document])
-      #       end
-      #     rescue => e
-      #       Log.error("Failed to serialize file: #{searchable_file_path}")
-      #       Log.error(e)
-      #     end
-      #   end
-      # end
-
-      # Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
-
-      # es_client.flush(refresh_index: index_name)
-    end
-
-    def index_workspace_gems(preserve: true)
-      gems_index_name = @project.gems_index_name
-
-      return if client.indices.exists?(index: gems_index_name) && preserve
-
-      Log.info("Starting to index workspace gems. Elasticsearch index: #{gems_index_name}")
-
-      start_time = Time.now
-
-      FilePaths.new(@project.gems_container_root_path).find_each_gem_directory do |dir_path|
-        # delete all docs for this dir
-        FilePaths.new(dir_path).each_file do |file_path|
-          ## stopped here
-
-          begin
-            searchable_file_path = Utils.searchable_path(@project, file_path)
-            readable_file_path = Utils.readable_path(@project, file_path)
-            serializer = Serializer.new(@project, file_path: readable_file_path)
-
-            serializer.serialize_nodes.each do |hash|
-              document = hash.merge(file_path: searchable_file_path)
-              es_client.queue([{ index: { _index: index_name } }, document])
-            end
-          rescue => e
-            Log.error("Failed to serialize file: #{searchable_file_path}")
-            Log.error(e)
-          end
+      file_paths = FilePaths.new(@project.container_workspace_path)
+      file_names = file_paths.find_each_modified_file(since: Time.at(0)) do |path|
+        begin
+          reindex(path, flush: false, delete_existing: false)
+        rescue => e
+          Log.debug("Error while reindexing #{path}:")
+          Log.debug(e)
         end
       end
 
-      Log.info("Finished indexing workspace to #{index_name} in: #{Time.now - start_time} seconds (#{(Time.now - start_time) / 60} mins))")
+      flush_queue
 
-      es_client.flush(refresh_index: index_name)
+      Log.debug("Finished reindexing #{file_names.count} files in: #{Time.now - start_time} seconds.")
     end
 
-    def reindex(*file_paths, content: {}, wait: true)
-      Log.debug("Reindex starting on #{file_paths.count} files.")
-
+    def reindex_modified_files(force: false)
       start_time = Time.now
 
-      path_attrs =
-        file_paths.map do |path|
-          {
-            searchable_file_path: Utils.searchable_path(@project, path),
-            readable_file_path: Utils.readable_path(@project, path),
-            content: content[path]
-          }
+      base_sync_path = ENV["DOCKER"] ? "/usr/share/elasticsearch/data" : File.expand_path("./tmp")
+      last_sync_path = "#{base_sync_path}/last_sync_#{@project.index_name}"
+
+      begin
+        @latest_modified_files_sync ||= Time.at(File.read(last_sync_path).to_i)
+      rescue Errno::ENOENT
+        delete_index
+        create_index
+
+        File.write(last_sync_path, 0)
+        @latest_modified_files_sync = Time.at(0)
+      end
+
+      if @latest_modified_files_sync == Time.at(0)
+        delete_existing = false
+      end
+
+      if force || (Time.now - @latest_modified_files_sync > 60 * 2)
+        Log.debug("Reindex starting!")
+
+        since = @latest_modified_files_sync
+        now = Time.now
+        @latest_modified_files_sync = now
+        File.write(last_sync_path, now.to_i)
+
+        file_paths = FilePaths.new(@project.container_workspace_path)
+
+        file_names = file_paths.find_each_modified_file(since: since) do |path|
+          reindex(path, flush: false, delete_existing: delete_existing)
+        rescue => e
+          Log.debug("Error while reindexing #{path}:")
+          Log.debug(e)
         end
 
-      path_attrs.each do |attrs|
-        serializer = Serializer.new(
-          @project,
-          file_path: attrs[:readable_file_path],
-          content: attrs[:content]
-        )
+        flush_queue
 
-        # next unless serializer.file_deleted?
+        Log.debug("Finished reindexing #{file_names.count} files in: #{Time.now - start_time} seconds.")
+      end
+    end
 
+    def reindex(file_path, content: {}, flush: true, delete_existing: true)
+      Log.debug("Reindex starting on #{file_path}") if rand > 0.98
+
+      path_attrs = {
+        searchable_file_path: Utils.searchable_path(@project, file_path),
+        readable_file_path: Utils.readable_path(@project, file_path),
+        content: content[file_path]
+      }
+
+      serializer = Serializer.new(
+        @project,
+        file_path: path_attrs[:readable_file_path],
+        content: path_attrs[:content]
+      )
+
+      if delete_existing
         client.delete_by_query(
           index: index_name,
           conflicts: "proceed",
           body: {
             "query": {
-              "terms": {
-                "file_path.tree": path_attrs.map { |path| path[:searchable_file_path] }
+              "term": {
+                "file_path.tree": path_attrs[:searchable_file_path]
               }
             }
           }
         )
-
-        next unless serializer.valid_ast?
-
-        serializer.serialize_nodes.each do |serialized_node|
-          document = serialized_node.merge(file_path: attrs[:searchable_file_path])
-          es_client.queue([{ index: { _index: index_name }}, document])
-        end
       end
 
-      thread = es_client.flush(refresh_index: index_name)
-      thread.join if thread && wait
+      return unless serializer.valid_ast?
 
-      Log.debug("Finished reindexing #{file_paths.count} files in: #{Time.now - start_time} seconds.")
+      serializer.serialize_nodes.each do |serialized_node|
+        document = serialized_node.merge(file_path: path_attrs[:searchable_file_path])
+        es_client.queue([{ index: { _index: index_name }}, document])
+      end
+
+      flush_queue if flush
     end
 
     private
+
+    def flush_queue
+      thread = es_client.flush(refresh_index: index_name)
+      thread.join if thread
+    end
 
     def client
       @client ||= ElasticsearchClient.connection

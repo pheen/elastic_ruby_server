@@ -6,7 +6,7 @@ module ElasticRubyServer
     subject { described_class.new(project) }
 
     describe "lvar" do
-      let(:file_path) { "/type_mapping.rb" }
+      let(:file_path) { "type_mapping.rb" }
 
       it "finds the right assignment" do
         expect(asgn_doc("unique_local_var", type: "lvar")).to match_doc(

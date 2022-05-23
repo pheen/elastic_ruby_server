@@ -3,7 +3,7 @@ module ElasticRubyServer
   class SymbolLocation
     def self.build(source:, workspace_path:)
       {
-        uri: "file://#{workspace_path}#{source['file_path']}",
+        uri: "file://#{workspace_path}/#{source['file_path']}",
         range: {
           start: {
             line: source["line"] - 1,
