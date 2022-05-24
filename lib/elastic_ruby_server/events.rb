@@ -63,6 +63,7 @@ module ElasticRubyServer
         file_content = params.dig("textDocument", "text")
         file_buffer = FileBuffer.new(file_content)
 
+        @project.last_open_file = file_uri
         @open_files_buffer[file_uri] = file_buffer
 
         publish_diagnostics(file_uri)
@@ -74,6 +75,7 @@ module ElasticRubyServer
     def on_textDocument_didClose(params) # "textDocument":{"uri":"file:///Users/joelkorpela/clio/themis/components/payments/spec/services/payments/stripe/provider_spec.rb","languageId":"ruby","version":1,"text":"module Payments\n  module Stripe\n    describe Provider do\n      let(:connected_account_id) { provider_account.external_id }\n      let(:provider_account) { create(:payments_stripe_account) }\n      let(:account) { provider_account.account }\n      let!(:signup) { create(:payments_stripe_signup, application_status: :success, account: account) }\n\n      subject { provider_account.provider }\n\n      describe \".#get_api_version\" do\n        subject { Payments::Stripe::Provider.get_api_version }\n\n        let(:api_version) { \"2020-08-27\" }\n\n        it \"fetches the stripe api version\" do\n          result = subject\n          expect(result).to eq(api_version)\n        end\n      end\n\n      describe \"#default_required_payment_fields\" do\n        let(:expected_default_payment_fields) { \"cvv,name,email,address1,city,state,postal_code,country\" }\n\n        it \"has the expected default required payment fields\" do\n          expect(subject.default_required_payment_fields).to eq(expected_default_payment_fields)\n        end\n      end\n\n      de...
       queue_task(worker: @buffer_synchronization) do
         file_uri = params.dig("textDocument", "uri")
+        @project.last_open_file = ""
         @open_files_buffer.delete(file_uri)
         @server.publish_diagnostics(file_uri, [])
         @persistence.reindex_modified_files
@@ -133,6 +135,8 @@ module ElasticRubyServer
       file_uri = params.dig("textDocument", "uri")
       cursor = params["position"]
 
+      @project.last_open_file = file_uri
+
       @search.find_definitions(file_uri, cursor).map do |doc|
         SymbolLocation.build(
           source: doc["_source"],
@@ -156,6 +160,8 @@ module ElasticRubyServer
     def on_textDocument_references(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/test/testing.rb"}, "position"=>{"line"=>36, "character"=>8}, "context"=>{"includeDeclaration"=>true}}
       file_uri = params.dig("textDocument", "uri")
       cursor = params["position"]
+
+      @project.last_open_file = file_uri
 
       @search.find_references(file_uri, cursor).map do |doc|
         SymbolLocation.build(

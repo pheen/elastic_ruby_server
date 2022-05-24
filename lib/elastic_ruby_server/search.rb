@@ -64,7 +64,13 @@ module ElasticRubyServer
                 "bool": {
                   "should": [
                     { "match": { "name": "#{query}" } },
-                    { "wildcard": { "name.keyword": "*#{query}*" } },
+                    # { "wildcard": { "name.keyword": "*#{query}*" } },
+                    {
+                      "query_string": {
+                        "query": "*#{query}*",
+                        "fields": ["name"]
+                      }
+                    },
                   ],
                   "minimum_should_match": 1
                 },
@@ -86,12 +92,14 @@ module ElasticRubyServer
         }
       }
 
-      # if !@project.current_file&.match?("spec/")
-      #   body[:query][:bool][:must][3][:bool][:must_not] = [
-      #     { "match": { "scope": "let!RspecMetaNode" } },
-      #     { "match": { "scope": "letRspecMetaNode" } },
-      #   ]
-      # end
+      if outside_test_directory?
+        body[:query][:bool][:must][3][:bool][:must_not].concat([
+          # { "match": { "scope": "let!RspecMetaNode" } },
+          # { "match": { "scope": "letRspecMetaNode" } },
+          { "match": { "file_path": "spec" } },
+          { "match": { "file_path": "test" } },
+        ])
+      end
 
       response = client.search(
         index: @project.index_name,
@@ -316,6 +324,15 @@ module ElasticRubyServer
     def query_assignment(file_path, usage)
       query = QueryBuilder.assignment_query(file_path, usage)
 
+      if outside_test_directory?
+        query[:query][:bool][:must_not] = [
+          # { "match": { "scope": "let!RspecMetaNode" } },
+          # { "match": { "scope": "letRspecMetaNode" } },
+          { "match": { "file_path": "spec" } },
+          { "match": { "file_path": "test" } },
+        ]
+      end
+
       Log.debug("query_assignemnt:")
       Log.debug(query)
 
@@ -348,6 +365,13 @@ module ElasticRubyServer
       if first_hit["_score"] >= (second_hit["_score"] * magic_score_multiplier)
         first_hit
       end
+    end
+
+    def outside_test_directory?
+      !@project.last_open_file.match?(/^spec\//) ||
+        !@project.last_open_file.match?(/\/spec\//) ||
+        !@project.last_open_file.match?(/^test\//) ||
+        !@project.last_open_file.match?(/\/test\//)
     end
 
     def lookup_vscode_type(type)

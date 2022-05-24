@@ -7,7 +7,12 @@ module ElasticRubyServer
       @project_root = ENV.fetch("PROJECTS_ROOT")
     end
 
-    attr_accessor :host_workspace_path, :container_workspace_path
+    attr_accessor :host_workspace_path, :container_workspace_path, :last_open_file
+
+    def last_open_file
+      @last_open_file ||= ""
+      Utils.searchable_path(self, @last_open_file)
+    end
 
     def name
       # match the last directory in host_project_root
