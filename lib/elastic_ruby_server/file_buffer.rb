@@ -81,10 +81,13 @@ module ElasticRubyServer
       path = "rubocop_config_location.rb"
       path = "/app/#{path}" if ENV["DOCKER"]
 
+      config_path = ".rubocop-formatting.yml"
+      config_path = "/app/.rubocop-formatting.yml" if ENV["DOCKER"]
+
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       begin
-        rubocop_output, _err = cmd.run("/usr/local/bin/rubocop-daemon-wrapper/rubocop -s #{path} --lint --fix-layout --auto-correct --format quiet --fail-level fatal", input: contents_with_hash)
+        rubocop_output, _err = cmd.run("/usr/local/bin/rubocop-daemon-wrapper/rubocop -s #{path} --config #{config_path} --lint --fix-layout --auto-correct --format quiet --fail-level fatal", input: contents_with_hash)
       rescue TTY::Command::ExitError => e
         Log.debug("Rubocop Formatting Error:")
         Log.debug(e)

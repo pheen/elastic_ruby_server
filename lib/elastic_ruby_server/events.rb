@@ -241,8 +241,8 @@ module ElasticRubyServer
     def publish_diagnostics(uri)
       diagnostics = []
       path = Utils.readable_path(@project, uri)
-      rubocop_config = Utils.readable_path(@project, ".rubocop.yml")
-      rubocop_config ||= "/app/.rubocop.yml"
+      # rubocop_config = Utils.readable_path(@project, ".rubocop.yml")
+      rubocop_config = "/app/.rubocop-diagnostics.yml"
       file_buffer = @open_files_buffer[uri]
 
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
