@@ -97,7 +97,8 @@ module ElasticRubyServer
       File.write(last_sync_path, @latest_modified_files_sync.to_i)
 
       file_paths = FilePaths.new(@project.container_workspace_path)
-      file_names = file_paths.find_each_modified_file(since: Time.at(0)) do |path|
+      file_names = file_paths.find_each_modified_file(since: Time.at(0)) do |path, progress|
+        yield progress if block_given?
         begin
           reindex(path, flush: false, delete_existing: false)
         rescue => e
@@ -141,7 +142,8 @@ module ElasticRubyServer
 
         file_paths = FilePaths.new(@project.container_workspace_path)
 
-        file_names = file_paths.find_each_modified_file(since: since) do |path|
+        file_names = file_paths.find_each_modified_file(since: since) do |path, progress|
+          yield progress if block_given?
           reindex(path, flush: false, delete_existing: delete_existing)
         rescue => e
           Log.debug("Error while reindexing #{path}:")

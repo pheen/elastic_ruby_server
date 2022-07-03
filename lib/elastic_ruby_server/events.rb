@@ -32,15 +32,34 @@ module ElasticRubyServer
     end
 
     def on_initialized(_hash)
+      @server.publish_busy_status(action: "Starting Elasticsearch", percent: 0)
+
       Log.debug(`/app/exe/es_check.sh`)
+
+      @server.publish_busy_status(action: "Starting Elasticsearch", percent: 100)
 
       queue_task(worker: @local_synchronization) do
         @persistence.create_index
-        @persistence.reindex_modified_files(force: true)
+        @persistence.reindex_modified_files(force: true) do |progress|
+          @server.publish_busy_status(action: "Indexing", percent: progress)
+        end
+      end
+
+      tick(seconds: 5)
+    end
+
+    def tick(seconds:)
+      Thread.new do
+        loop do
+          @persistence.reindex_modified_files do |progress|
+            @server.publish_busy_status(action: "Indexing", percent: progress)
+          end
+          sleep(seconds)
+        end
       end
     end
 
-    def on_workspace_reindex(params)
+    def on_workspace_reindex(_params)
       queue_task(worker: @local_synchronization) do
         @persistence.reindex_all_files
       end
@@ -53,7 +72,9 @@ module ElasticRubyServer
         publish_diagnostics(file_uri)
 
         @persistence.reindex(file_uri)
-        @persistence.reindex_modified_files
+        @persistence.reindex_modified_files do |progress|
+          @server.publish_busy_status(action: "Indexing", percent: progress)
+        end
       end
     end
 
@@ -68,7 +89,9 @@ module ElasticRubyServer
 
         publish_diagnostics(file_uri)
         @persistence.reindex(file_uri, content: { file_uri => file_content })
-        @persistence.reindex_modified_files
+        @persistence.reindex_modified_files do |progress|
+          @server.publish_busy_status(action: "Indexing", percent: progress)
+        end
       end
     end
 
@@ -78,7 +101,9 @@ module ElasticRubyServer
         @project.last_open_file = ""
         @open_files_buffer.delete(file_uri)
         @server.publish_diagnostics(file_uri, [])
-        @persistence.reindex_modified_files
+        @persistence.reindex_modified_files do |progress|
+          @server.publish_busy_status(action: "Indexing", percent: progress)
+        end
       end
     end
 
@@ -176,6 +201,8 @@ module ElasticRubyServer
     end
 
     def on_textDocument_rangeFormatting(params) # {"textDocument"=>{"uri"=>"file:///Users/joelkorpela/clio/themis/components/manage/app/models/manage/user.rb"}, "range"=>{"start"=>{"line"=>581, "character"=>0}, "end"=>{"line"=>582, "character"=>38}}, "options"=>{"tabSize"=>2, "insertSpaces"=>true, "trimTrailingWhitespace"=>true}}
+      @server.publish_busy_status(action: "Formatting", percent: 0)
+
       @buffer_synchronization.shutdown
       @buffer_synchronization.wait_for_termination(10)
       @buffer_synchronization = Concurrent::FixedThreadPool.new(1)
@@ -183,6 +210,8 @@ module ElasticRubyServer
       file_uri = params.dig("textDocument", "uri")
       file_buffer = @open_files_buffer[file_uri]
       formatted_range = file_buffer.format_range(params["range"])
+
+      @server.publish_busy_status(action: "Formatting", percent: 100)
 
       formatted_range ? formatted_range : []
     end

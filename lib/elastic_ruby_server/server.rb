@@ -80,6 +80,22 @@ module ElasticRubyServer
       @conn.flush
     end
 
+    def publish_busy_status(action:, percent:)
+      notification = JSON.unparse({
+        jsonrpc: "2.0",
+        method: "workspace/elasticRubyServerBusy",
+        params: {
+          busy: percent < 100 ? "true" : nil,
+          tooltip: "#{action}: #{percent}%"
+        }
+      })
+
+      @conn.write("Content-Length: #{notification.length}\r\n")
+      @conn.write("\r\n")
+      @conn.write(notification)
+      @conn.flush
+    end
+
     private
 
     def receive_request

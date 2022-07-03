@@ -47,12 +47,12 @@ module ElasticRubyServer
       current_count = 0
 
       files.each do |file_name|
-        block.call(file_name)
-
         current_count += 1
         progress = (current_count / total_count.to_f) * 100
 
-        if (progress == 100) || (rand > 0.98)
+        block.call(file_name, progress)
+
+        if (progress >= 100) || (rand > 0.98)
           Log.debug("Progress: #{progress}%")
         end
       end
