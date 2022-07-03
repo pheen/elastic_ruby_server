@@ -56,8 +56,8 @@ Lint/EnsureReturn:
 Lint/ShadowedArgument:
   Enabled: true
 
-Lint/ShadowedException:
-  Enabled: true
+# Lint/ShadowedException:
+#   Enabled: true
 
 Lint/ShadowingOuterLocalVariable:
   Enabled: true
