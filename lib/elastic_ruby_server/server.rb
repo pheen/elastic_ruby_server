@@ -16,7 +16,7 @@ module ElasticRubyServer
           change: 2,
         },
         workspaceSymbolProvider: true,
-        # Not implemented:
+        ## Not implemented:
         # codeActionProvider: false,
         # completionProvider: {
         #   triggerCharacters: ['.', '::'],
