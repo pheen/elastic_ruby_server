@@ -7,7 +7,8 @@ module ElasticRubyServer
       @project_root = ENV.fetch("PROJECTS_ROOT")
     end
 
-    attr_accessor :host_workspace_path, :container_workspace_path, :last_open_file
+    attr_accessor :host_workspace_path
+    attr_writer :container_workspace_path, :last_open_file
 
     def last_open_file
       @last_open_file ||= ""
