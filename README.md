@@ -6,7 +6,7 @@ A Ruby language server with persistent storage backed by Elasticsearch. The goal
 | Features  |  |
 | ------------- | ------------- |
 | [Definitions](#definitions) | Jump to definitions for methods, variables, etc. |
-| [Definition Search](#definition-search)  | Search definitions in all files |
+| ~[Definition Search](#definition-search)~  | Search definitions in all files. Currently Disabled while WIP. |
 | [Diagnostics](#diagnostics) | Indicates issues generated with Rubocop |
 | [Formatting](#formatting) | Supports formatting only modified lines |
 | [Highlights](#highlights) | Highlight all occurrences in a document |
@@ -14,8 +14,55 @@ A Ruby language server with persistent storage backed by Elasticsearch. The goal
 | [Rename](#rename) | Update all references to a method/variable/symbol |
 
 &nbsp;
+## Installation
+**1.** Install the `Elastic Ruby Language Server` extension from the VSCode Marketplace.
+
+**2.** Install Docker if needed.
+
+**3.** Install the dependencies needed for the extension to interact with Docker:
+```bash
+> cd ~/.vscode/extensions/blinknlights.elastic-ruby-client-1.0.0/
+> npm install
+```
+
+**3.** Set paths the server can read. A file must be in a sub-directory of one of these paths to be accessable by the server. Configure in VSCode's settings:
+
+```
+"elasticRubyServer.projectPaths": [
+  "/Users/<name>/projects",
+  "/Users/<name>/a_folder/more_projects"
+]
+```
+
+- Note: don't use your home directory as a path or docker will use a large amount of CPU %.
+- Tip: add a path that includes your gems so you can use the language server when running `bundle open <gem name>`. For example using rbenv: `"/Users/<username>/.rbenv/versions"`
+
+**5.** Enable formatting on save. Only modified lines are formatted. Configure in VSCode's settings:
+
+```
+"editor.formatOnSave": true,
+"editor.formatOnSaveMode": "modifications",
+"[ruby]": {
+  "editor.defaultFormatter": "Blinknlights.elastic-ruby-client"
+},
+```
+
+**6.** Activate the extension by reloading VSCode and navigating to any `.rb` file.
+
+- The server's Docker image will automatically download and run before indexing the workspace.
+- The status bar icon turns red while the server is busy. The tooltip displays progress:
+![image](https://user-images.githubusercontent.com/1145873/177087354-ef3ab14f-5e85-4440-8447-85eb3bbdadc2.png)
+![image](https://user-images.githubusercontent.com/1145873/177087554-1bd900f3-c14b-454f-8af7-052be40ec0d9.png)
+
+&nbsp;
+## Configuration
+- `elasticRubyServer.projectPaths`. See Installation.
+- `elasticRubyServer.port`. Default: `8341`
+
+&nbsp;
+## Features
 <a id="definitions"></a>
-## Definitions
+### Definitions
 Peek or go to the definition of a method/variable/symbol
 
 - Command: `Go to Definition`
@@ -38,7 +85,7 @@ Peek or go to the definition of a method/variable/symbol
 
 &nbsp;
 <a id="definition-search"></a>
-## Definition Search
+### Definition Search
 Quickly navigate to definitions anywhere in a project.
 
 - Command: `Go to Symbol in Workspace...`
@@ -48,12 +95,12 @@ Quickly navigate to definitions anywhere in a project.
 
 &nbsp;
 <a id="diagnostics"></a>
-## Diagnostics
+### Diagnostics
 Enable and configure Rubocop to highlight issues by adding .rubocop.yml to the root of a project.
 
 &nbsp;
 <a id="formatting"></a>
-## Formatting
+### Formatting
 Formats modified lines using a light Rubocop configuration. Duplicate changes are ignored so formatting will not be applied when undoing the automatic formatting then re-saving.
 
 - Trigger: on save
@@ -64,14 +111,14 @@ Formats modified lines using a light Rubocop configuration. Duplicate changes ar
 
 &nbsp;
 <a id="highlights"></a>
-## Highlights
+### Highlights
 See all occurrences of a method/variable/symbol in the current editor.
 
 ![document-highlights](https://code.visualstudio.com/assets/api/language-extensions/language-support/document-highlights.gif)
 
 &nbsp;
 <a id="references"></a>
-## References
+### References
 See all the locations where a method/variable/symbol is being used. Only locations in the the file being edited are shown currently.
 
 - Command: `Go to References`
@@ -81,7 +128,7 @@ See all the locations where a method/variable/symbol is being used. Only locatio
 
 &nbsp;
 <a id="rename"></a>
-## Rename
+### Rename
 Change the name of a method/variable/symbol.
 
 - Command: `Rename Symbol`
@@ -90,41 +137,13 @@ Change the name of a method/variable/symbol.
 ![rename](https://code.visualstudio.com/assets/api/language-extensions/language-support/rename.gif)
 
 &nbsp;
-# Installation
-**1.** Install the `Elastic Ruby Language Server` extension and Docker if needed.
-
-**2.** Configure `elasticRubyServer.projectPaths`. **Important:** A project must be a sub-directory of one of these paths to be readable by the langue server.
-- Configure in VSCode's JSON settings (`cmd + shift + p` and search for `Preferences: Open Settings (JSON)`).
-- Don't use your home directory as a project path or docker will use a large amount of CPU %.
-```
-"elasticRubyServer.projectPaths": [
-	"/Users/<name>/projects",
-	"/Users/<name>/a_folder/more_projects"
-]
-```
-
-**3.** Install dependencies needed for the extension to interact with docker:
-```bash
-> cd ~/.vscode/extensions/blinknlights.elastic-ruby-client-0.5.1/
-> npm install
-```
-
-**5.** Reload VSCode
-
-**6.** Navigate to any `.rb` file to activate the extension. The extension will automatically download the language server's docker image and start indexing a workspace. Indexing may take a few minutes for large projects.
-
-&nbsp;
-## Configuration
-- `elasticRubyServer.port`. The default is `8341`.
-
-&nbsp;
 ## Custom Commands
 Run commands with `cmd + shift + p`.
 - `Reindex Workspace` deletes all current data for the project and starts reindexing all files.
 - `Stop Server` to shutdown the Docker container.
 
 &nbsp;
-# How does it work?
+## How does it work?
 The server runs inside a docker container and has its own instance of Elasticsearch. Clients connect through TCP allowing multiple clients to connect to a single instance of the server.
 
 Ruby files are converted to an AST with [Parser](https://github.com/whitequark/parser) which is serialized by the language server and indexed into Elasticsearch. Data is persisted in a named Docker volume.
@@ -136,12 +155,6 @@ Definitions are searched by storing a `scope` which is built for a given locatio
 - Check that the container is running. The image name is `blinknlights/elastic_ruby_server` which is ran with the name `elastic-ruby-server`. You could check with `docker ps` or in the Docker app:
 
   ![Screen Shot 2021-07-01 at 8 41 06 PM](https://user-images.githubusercontent.com/1145873/124217196-bc1a4380-daac-11eb-9f9a-e05bca82d5f6.png)
-
-&nbsp;
-# todo:
-Got this after doing the npm install for your extension:
-found 2 moderate severity vulnerabilities
-  run `npm audit fix` to fix them, or `npm audit` for details
 
 &nbsp;
 ## License
