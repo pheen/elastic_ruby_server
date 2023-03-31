@@ -1,3 +1,5 @@
+## :no_entry: [DEPRECATED] Active at https://github.com/pheen/fuzzy_ruby_vscode_client
+
 # Elastic Ruby Server
 
 A Ruby language server with persistent storage backed by Elasticsearch. The goal of this language server is to provide reasonably accurate static analysis while staying performant for large projects.
